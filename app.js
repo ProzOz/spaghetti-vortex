@@ -133,6 +133,8 @@ let vortexState = {
 };
 
 // Draw cartoon vortex (spaghetti spiral)
+// OpenAI visualization vibe: orange = faster rotation, teal = slower
+// Inward spiraling + axial stretching (spaghetti elongating toward singularity)
 function drawVortex() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -141,10 +143,10 @@ function drawVortex() {
     
     ctx.clearRect(0, 0, w, h);
     
-    // Background gradient
+    // Dark background (OpenAI snapshot vibe)
     const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) / 2);
-    bgGrad.addColorStop(0, '#1a1a2e');
-    bgGrad.addColorStop(1, '#0f0f1e');
+    bgGrad.addColorStop(0, '#0a0a0f');
+    bgGrad.addColorStop(1, '#050508');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
     
@@ -153,50 +155,77 @@ function drawVortex() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // Beat-based behavior
-    const numSpirals = 3 + Math.floor(vortexState.beatIndex);
-    const maxRadius = Math.min(w, h) * 0.35;
-    const tightness = 0.5 + singularityFactor * 2.0 * vortexState.stretch;
-    const elongation = 1.0 + singularityFactor * 2.5 * vortexState.stretch;
+    // Spaghetti elongation: vortex stretches axially as it concentrates
+    const axialStretch = 1.0 + singularityFactor * 3.5 * vortexState.stretch;
+    const radialShrink = 1 - singularityFactor * 0.8;
     
-    // Draw multiple spiral ribbons (spaghetti strands)
-    for (let spiralIdx = 0; spiralIdx < numSpirals; spiralIdx++) {
-        const spiralOffset = (spiralIdx / numSpirals) * Math.PI * 2;
-        const hue = 200 + spiralIdx * 30;
+    // More strands as we approach singularity
+    const numStrands = 4 + Math.floor(vortexState.beatIndex * 1.5);
+    const maxRadius = Math.min(w, h) * 0.38;
+    
+    // Draw ribbon/tube strands with orange (fast) / teal (slow) coloring
+    for (let strandIdx = 0; strandIdx < numStrands; strandIdx++) {
+        const strandPhase = (strandIdx / numStrands) * Math.PI * 2;
         
-        ctx.beginPath();
+        // Each strand is a series of connected tube segments
+        const segments = [];
         
-        for (let i = 0; i <= 100; i++) {
-            const angle = (i / 100) * Math.PI * 6 * tightness + spiralOffset;
-            const radius = maxRadius * (1 - i / 100) * (1 - singularityFactor * 0.7);
+        for (let i = 0; i <= 80; i++) {
+            const radiusNorm = 1 - i / 80; // 1 (outer) to 0 (center)
             
-            const spinAngle = angle * vortexState.spin + t * Math.PI * 2;
-            const x = cx + Math.cos(spinAngle) * radius;
-            const y = cy + Math.sin(spinAngle) * radius / elongation;
+            // Inward spiral trajectory
+            const spiralTurns = 3 + singularityFactor * 4;
+            const angle = radiusNorm * Math.PI * 2 * spiralTurns + strandPhase;
             
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
+            // Angular velocity increases inward (faster rotation near center)
+            const angularSpeed = 0.3 + (1 - radiusNorm) * 2.5 * vortexState.spin;
+            const spinPhase = angle + t * Math.PI * 2 * angularSpeed;
+            
+            // Radius shrinks inward, concentrates near singularity
+            const radius = maxRadius * radiusNorm * radialShrink;
+            
+            // Axial stretching (spaghetti elongation)
+            const x = cx + Math.cos(spinPhase) * radius;
+            const y = cy + Math.sin(spinPhase) * radius / axialStretch;
+            
+            segments.push({ x, y, radiusNorm, angularSpeed });
         }
         
-        const opacity = 0.3 + singularityFactor * 0.4;
-        const lineWidth = 2 + singularityFactor * 4;
-        
-        ctx.strokeStyle = `hsla(${hue}, 70%, ${50 + singularityFactor * 30}%, ${opacity})`;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
+        // Draw strand as gradient-colored path
+        // Orange = faster angular rotation (inner), Teal = slower (outer)
+        for (let i = 0; i < segments.length - 1; i++) {
+            const seg = segments[i];
+            const nextSeg = segments[i + 1];
+            
+            // Color based on angular speed: orange (fast) to teal (slow)
+            const speedFactor = (seg.angularSpeed - 0.3) / 2.5;
+            const orange = { r: 251, g: 146, b: 60 };  // #fb923c
+            const teal = { r: 45, g: 212, b: 191 };    // #2dd4bf
+            
+            const r = Math.round(teal.r + (orange.r - teal.r) * speedFactor);
+            const g = Math.round(teal.g + (orange.g - teal.g) * speedFactor);
+            const b = Math.round(teal.b + (orange.b - teal.b) * speedFactor);
+            
+            const opacity = 0.4 + singularityFactor * 0.3 + seg.radiusNorm * 0.2;
+            const lineWidth = 1.5 + singularityFactor * 3 + (1 - seg.radiusNorm) * 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(seg.x, seg.y);
+            ctx.lineTo(nextSeg.x, nextSeg.y);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
     }
     
-    // Draw center concentration point (singularity visualization)
-    if (singularityFactor > 0.3) {
-        const glowRadius = 15 * (1 - singularityFactor) + 3;
+    // Central concentration glow (singularity region)
+    if (singularityFactor > 0.4) {
+        const glowRadius = 12 * (1 - singularityFactor * 0.5) + 4;
         const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
-        glowGrad.addColorStop(0, `rgba(139, 92, 246, ${singularityFactor})`);
-        glowGrad.addColorStop(1, 'rgba(139, 92, 246, 0)');
+        glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.8})`);
+        glowGrad.addColorStop(0.5, `rgba(251, 146, 60, ${singularityFactor * 0.3})`);
+        glowGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
         ctx.fillStyle = glowGrad;
         ctx.fillRect(cx - glowRadius, cy - glowRadius, glowRadius * 2, glowRadius * 2);
     }
@@ -293,26 +322,30 @@ function handleScrubberMove(clientX) {
 }
 
 scrubberTrack.addEventListener('mousedown', (e) => {
+    e.preventDefault();
     isDraggingScrubber = true;
     handleScrubberMove(e.clientX);
 });
 
 scrubberTrack.addEventListener('touchstart', (e) => {
+    e.preventDefault();
     isDraggingScrubber = true;
     handleScrubberMove(e.touches[0].clientX);
-}, { passive: true });
+});
 
 document.addEventListener('mousemove', (e) => {
     if (isDraggingScrubber) {
+        e.preventDefault();
         handleScrubberMove(e.clientX);
     }
 });
 
 document.addEventListener('touchmove', (e) => {
     if (isDraggingScrubber) {
+        e.preventDefault();
         handleScrubberMove(e.touches[0].clientX);
     }
-}, { passive: true });
+});
 
 document.addEventListener('mouseup', () => {
     isDraggingScrubber = false;
@@ -331,6 +364,7 @@ let lastCanvasX = 0;
 let lastCanvasY = 0;
 
 canvas.addEventListener('mousedown', (e) => {
+    e.preventDefault();
     isDraggingCanvas = true;
     lastCanvasX = e.clientX;
     lastCanvasY = e.clientY;
@@ -338,14 +372,16 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
+        e.preventDefault();
         isDraggingCanvas = true;
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
     }
-}, { passive: true });
+});
 
 document.addEventListener('mousemove', (e) => {
     if (isDraggingCanvas) {
+        e.preventDefault();
         const deltaX = e.clientX - lastCanvasX;
         const deltaY = e.clientY - lastCanvasY;
         
@@ -367,6 +403,7 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('touchmove', (e) => {
     if (isDraggingCanvas && e.touches.length === 1) {
+        e.preventDefault();
         const deltaX = e.touches[0].clientX - lastCanvasX;
         const deltaY = e.touches[0].clientY - lastCanvasY;
         
@@ -381,7 +418,7 @@ document.addEventListener('touchmove', (e) => {
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
     }
-}, { passive: true });
+});
 
 document.addEventListener('mouseup', () => {
     isDraggingCanvas = false;

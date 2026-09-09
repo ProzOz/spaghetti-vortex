@@ -130,6 +130,10 @@ body {
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-subtle);
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .stage-header {
@@ -159,6 +163,10 @@ body {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     cursor: grab;
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #vortexCanvas:active {
@@ -222,6 +230,10 @@ body {
     border-radius: var(--radius-pill);
     margin-bottom: var(--space-md);
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .scrubber-progress {
@@ -338,6 +350,10 @@ body {
     padding: var(--space-lg);
     margin-bottom: var(--space-lg);
     box-shadow: var(--shadow-md);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .controls-title {
@@ -386,6 +402,10 @@ body {
     border-radius: var(--radius-pill);
     outline: none;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .slider::-webkit-slider-thumb {
