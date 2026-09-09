@@ -11,6 +11,14 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+}
+
 :root {
     /* Cinematic dark research lab theme */
     --bg-primary: #000000;
@@ -137,6 +145,7 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .stage-header {
@@ -175,6 +184,7 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 #vortexCanvas:active {
@@ -193,6 +203,10 @@ body {
     gap: var(--space-md);
     align-items: flex-start;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .beat-card.beat-transition {
@@ -238,6 +252,11 @@ body {
     margin-bottom: var(--space-lg);
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-subtle);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .scrubber-timestamps {
@@ -264,6 +283,8 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
 }
 
 .scrubber-progress {
@@ -313,6 +334,10 @@ body {
     color: var(--text-tertiary);
     text-align: center;
     font-weight: 600;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* Metrics Row (Stripe dashboard cards) */
@@ -321,6 +346,10 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: var(--space-md);
     margin-bottom: var(--space-lg);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .metric-card {
@@ -390,6 +419,7 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .controls-header {

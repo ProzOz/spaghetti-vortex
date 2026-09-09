@@ -534,10 +534,94 @@ function drawVortex() {
         
         ctx.strokeStyle = `rgba(${Math.round(fil.color.r)}, ${Math.round(fil.color.g)}, ${Math.round(fil.color.b)}, ${fil.opacity})`;
         ctx.lineWidth = fil.width;
+    // Draw multiple helical strands creating a tube bundle (spaghetti vortex)
+    // Draw from outside-in for proper depth ordering
+    const strandsData = [];
+    
+    for (let strandIdx = 0; strandIdx < numStrands; strandIdx++) {
+        // Each strand has unique phase and radial offset creating tube bundle effect
+        const phaseOffset = (strandIdx / numStrands) * Math.PI * 2;
+        const tubeRadiusFraction = 0.15 + (strandIdx % 5) * 0.04; // Varies tube thickness
+        
+        // Path points for this strand
+        const points = [];
+        
+        for (let i = 0; i <= 120; i++) {
+            const param = i / 120;
+            const spiralDepth = 1 - param; // 1=outer, 0=inner
+            
+            // Helical angle increases as we spiral inward
+            const helixAngle = param * Math.PI * 8 * helixTightness + phaseOffset;
+            
+            // Base radius shrinks toward center
+            const baseRadius = maxRadius * spiralDepth * (1 - singularityFactor * 0.5);
+            
+            // Add tube radius offset (perpendicular to spiral) creating bundle thickness
+            const tubeOffsetAngle = helixAngle + Math.PI / 2;
+            const tubeRadius = baseRadius * tubeRadiusFraction * (0.6 + spiralDepth * 0.4);
+            
+            // Rotation speed increases toward center
+            const rotationSpeed = 0.4 + (1 - spiralDepth) * 1.8;
+            const spinAngle = helixAngle * vortexState.spin + t * Math.PI * 2 * rotationSpeed;
+            
+            // 3D helical position: base spiral + tube bundle offset
+            const spiralX = Math.cos(spinAngle) * baseRadius;
+            const spiralY = Math.sin(spinAngle) * baseRadius / verticalStretch;
+            
+            const tubeOffsetX = Math.cos(tubeOffsetAngle) * tubeRadius;
+            const tubeOffsetY = Math.sin(tubeOffsetAngle) * tubeRadius / verticalStretch;
+            
+            let x = cx + spiralX + tubeOffsetX + explodeFactor * param * (spiralX + tubeOffsetX) * 0.5;
+            let y = cy + spiralY + tubeOffsetY + explodeFactor * param * (spiralY + tubeOffsetY) * 0.5;
+            
+            points.push({ x, y, depth: spiralDepth });
+        }
+        
+        // Color varies across strands: outer strands = cyan, inner = orange
+        const strandColorMix = strandIdx / numStrands;
+        let color;
+        
+        if (strandColorMix < 0.35) {
+            // Inner strands: pure orange/amber
+            color = { r: 251, g: 146, b: 60 };
+        } else if (strandColorMix < 0.75) {
+            // Middle transition zone
+            const mix = (strandColorMix - 0.35) / 0.4;
+            color = {
+                r: 251 - mix * (251 - 34),
+                g: 146 + mix * (211 - 146),
+                b: 60 + mix * (238 - 60)
+            };
+        } else {
+            // Outer strands: cyan/teal
+            color = { r: 34, g: 211, b: 238 };
+        }
+        
+        // Vary opacity and line width per strand for depth and volume
+        const depthOpacity = 0.25 + (strandIdx % 3) * 0.08;
+        const opacity = depthOpacity + singularityFactor * 0.35 + (vortexState.isExploding ? 0.25 : 0);
+        const lineWidth = 1.5 + (strandIdx % 4) * 0.4 + singularityFactor * 2.5 + (vortexState.isExploding ? 1.5 : 0);
+        
+        strandsData.push({ points, color, opacity, lineWidth });
+    }
+    
+    // Render all strands
+    strandsData.forEach(strand => {
+        ctx.beginPath();
+        strand.points.forEach((pt, idx) => {
+            if (idx === 0) {
+                ctx.moveTo(pt.x, pt.y);
+            } else {
+                ctx.lineTo(pt.x, pt.y);
+            }
+        });
+        
+        ctx.strokeStyle = `rgba(${Math.round(strand.color.r)}, ${Math.round(strand.color.g)}, ${Math.round(strand.color.b)}, ${strand.opacity})`;
+        ctx.lineWidth = strand.lineWidth;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke();
-    }
+    });
     
     // Central singularity glow
     if (singularityFactor > 0.3) {
