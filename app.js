@@ -254,8 +254,24 @@ function drawExplodeParticles() {
     });
 }
 
-// Draw cartoon vortex (3D spiral with cos/sin geometry)
-// Multi-strand tube bundle: Teal/cyan outer (slow) → orange/amber inner (fast)
+// Simple deterministic hash for stable filament parameters
+function hash(n) {
+    n = (n ^ 61) ^ (n >>> 16);
+    n = n + (n << 3);
+    n = n ^ (n >>> 4);
+    n = n * 0x27d4eb2d;
+    n = n ^ (n >>> 15);
+    return n >>> 0;
+}
+
+// Deterministic random [0, 1) from seed
+function seededRandom(seed) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
+// Draw dense 3D filament vortex matching OpenAI Navier-Stokes visualization
+// Key features: inward spiral + axial stretching, depth-sorted thin tubes
 function drawVortex() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -283,15 +299,241 @@ function drawVortex() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // 3D tube bundle parameters: many distinct helical strands
-    const numStrands = 18 + Math.floor(singularityFactor * 12); // More strands as it intensifies
-    const maxRadius = Math.min(w, h) * 0.35;
-    const helixTightness = 0.8 + singularityFactor * 2.5 * vortexState.stretch;
-    const verticalStretch = 1.2 + singularityFactor * 3.8 * vortexState.stretch;
+    // Dense filament pack: many thin tubes
+    const numFilaments = 80 + Math.floor(singularityFactor * 100);
+    const maxRadius = Math.min(w, h) * 0.4;
+    
+    // Axial stretching: vertical elongation that increases with singularity
+    const axialStretch = 1.2 + singularityFactor * 2.5 * vortexState.stretch;
+    
+    // Inward spiral tightness
+    const spiralTightness = 3.0 + singularityFactor * 6.0 * vortexState.spin;
     
     // Explode effect: burst outward
     const explodeFactor = vortexState.isExploding ? Math.sin(vortexState.explodeProgress * Math.PI) * 2.5 : 0;
     
+    // Build filaments with 3D depth data
+    const filaments = [];
+    
+    for (let fIdx = 0; fIdx < numFilaments; fIdx++) {
+        const filament = {
+            points: [],
+            depth: 0,
+            color: { r: 0, g: 0, b: 0 },
+            opacity: 0,
+            width: 0
+        };
+        
+        // Deterministic parameters from filament index
+        const seed = hash(fIdx);
+        const rand1 = seededRandom(seed);
+        const rand2 = seededRandom(seed + 1);
+        const rand3 = seededRandom(seed + 2);
+        const rand4 = seededRandom(seed + 3);
+        
+        // Each filament starts at a different angular position
+        const baseAngle = (fIdx / numFilaments) * Math.PI * 2;
+        
+        // Wider radial variation: some start from core, some from far out
+        const radialStart = 0.3 + rand1 * 0.7;
+        
+        // Some filaments are "wild" - they splay out at edges
+        const isWildFilament = rand2 < 0.3;
+        const wildnessFactor = isWildFilament ? 1.5 + rand3 * 1.0 : 1.0;
+        
+        // Phase offset for helix variation
+        const phaseOffset = rand4 * Math.PI * 2;
+        
+        // Vary spiral direction slightly for more chaos
+        const spiralVariation = 0.8 + seededRandom(seed + 4) * 0.4;
+        
+        // Sample points along the filament (outer → center)
+        const numPoints = 35 + Math.floor(seededRandom(seed + 5) * 15);
+        for (let i = 0; i < numPoints; i++) {
+            const param = i / (numPoints - 1);
+            
+            // Radius decreases inward (inward spiral) but with turbulence
+            const radiusNorm = (1 - param) * radialStart;
+            let radius = maxRadius * radiusNorm * (1 - singularityFactor * 0.5);
+            
+            // Wild filaments splay out at the edges
+            if (isWildFilament && param < 0.3) {
+                const edgeSplay = Math.pow(1 - param / 0.3, 1.5) * wildnessFactor;
+                radius *= edgeSplay;
+            }
+            
+            // Add deterministic turbulent noise to radius for organic feel
+            const turbulence = (seededRandom(seed + 100 + i) - 0.5) * 0.15 * radius;
+            radius += turbulence;
+            
+            // Helical angle: spirals inward with multiple turns + variation
+            const helixAngle = baseAngle + param * Math.PI * spiralTightness * spiralVariation;
+            
+            // 3D position using cylindrical coords with axial stretching
+            // x,z = radial plane (horizontal circle)
+            // y = axial (vertical stretch)
+            const x3d = Math.cos(helixAngle) * radius;
+            const z3d = Math.sin(helixAngle) * radius;
+            
+            // Axial coordinate: stretched vertically, concentrated at center
+            // Add asymmetry - more spread at top
+            const verticalBias = param * 0.3;
+            const yBase = (param - 0.5 + verticalBias) * maxRadius * axialStretch;
+            
+            // Add stronger sinusoidal wobble + noise for filament character
+            const wobble = Math.sin(param * Math.PI * 5 + phaseOffset) * radius * 0.12;
+            const noiseY = (seededRandom(seed + 200 + i) - 0.5) * radius * 0.08;
+            const y3d = yBase + wobble + noiseY;
+            
+            // Project to 2D with perspective depth
+            // Camera at z = -maxRadius*2, looking at origin
+            const camZ = maxRadius * 2;
+            const perspectiveFactor = camZ / (camZ + z3d);
+            
+            const x2d = cx + x3d * perspectiveFactor * (1 + explodeFactor * param);
+            const y2d = cy + y3d * perspectiveFactor * (1 + explodeFactor * param);
+            
+            filament.points.push({ x: x2d, y: y2d });
+            
+            // Track average depth (z) for sorting
+            if (i === Math.floor(numPoints / 2)) {
+                filament.depth = z3d;
+            }
+        }
+        
+        // Color based on local radius (average of mid-section) for richer variation
+        // Sample a few points in middle section to get representative radius
+        let avgRadiusNorm = 0;
+        const sampleStart = Math.floor(numPoints * 0.3);
+        const sampleEnd = Math.floor(numPoints * 0.7);
+        let sampleCount = 0;
+        for (let i = sampleStart; i < sampleEnd && i < filament.points.length; i++) {
+            const param = i / (numPoints - 1);
+            avgRadiusNorm += (1 - param) * radialStart;
+            sampleCount++;
+        }
+        const coreDistance = sampleCount > 0 ? avgRadiusNorm / sampleCount : radialStart;
+        
+        // More orange in the core to match reference
+        if (coreDistance < 0.45) {
+            // Inner core: orange/copper dominant
+            const coreMix = coreDistance / 0.45;
+            filament.color = {
+                r: 251,
+                g: 146 + coreMix * (200 - 146),
+                b: 60 + coreMix * 20
+            };
+        } else if (coreDistance < 0.7) {
+            // Mid transition: orange → purple/blue
+            const midMix = (coreDistance - 0.45) / 0.25;
+            filament.color = {
+                r: 251 - midMix * (251 - 80),
+                g: 200 - midMix * (200 - 120),
+                b: 80 + midMix * (200 - 80)
+            };
+        } else {
+            // Outer: cyan/bright blue
+            const outerMix = (coreDistance - 0.7) / 0.3;
+            filament.color = {
+                r: 80 - outerMix * 46,
+                g: 120 + outerMix * 91,
+                b: 200 + outerMix * 38
+            };
+        }
+        
+        // Thin filaments, more variation in thickness (deterministic)
+        filament.width = 0.6 + seededRandom(seed + 6) * 0.8 + singularityFactor * 0.5;
+        if (isWildFilament) {
+            filament.width *= 0.7;
+        }
+        
+        // Opacity variation for depth effect (deterministic)
+        const opacityBase = 0.2 + seededRandom(seed + 7) * 0.2 + singularityFactor * 0.35;
+        filament.opacity = opacityBase + (vortexState.isExploding ? 0.25 : 0);
+        
+        filaments.push(filament);
+    }
+    
+    // Add wild outer tendrils for visual richness (like the reference image)
+    const numTendrils = Math.floor(20 + singularityFactor * 30);
+    for (let tIdx = 0; tIdx < numTendrils; tIdx++) {
+        const tendril = {
+            points: [],
+            depth: 0,
+            color: { r: 0, g: 0, b: 0 },
+            opacity: 0,
+            width: 0
+        };
+        
+        // Deterministic tendril parameters
+        const tseed = hash(1000 + tIdx);
+        const trand1 = seededRandom(tseed);
+        const trand2 = seededRandom(tseed + 1);
+        const trand3 = seededRandom(tseed + 2);
+        const trand4 = seededRandom(tseed + 3);
+        const trand5 = seededRandom(tseed + 4);
+        const trand6 = seededRandom(tseed + 5);
+        
+        const angle = (tIdx / numTendrils) * Math.PI * 2 + trand1 * 0.5;
+        const startRadius = maxRadius * (0.6 + trand2 * 0.3);
+        const endRadius = maxRadius * (1.2 + trand3 * 0.5);
+        
+        const numPoints = 10 + Math.floor(trand4 * 8);
+        for (let i = 0; i < numPoints; i++) {
+            const param = i / (numPoints - 1);
+            const radius = startRadius + (endRadius - startRadius) * Math.pow(param, 1.5);
+            
+            // Slight angular sweep
+            const sweepAngle = angle + param * 0.4 * Math.sin(angle * 3);
+            
+            const x3d = Math.cos(sweepAngle) * radius;
+            const z3d = Math.sin(sweepAngle) * radius;
+            
+            // Vertical position biased toward top/mid
+            const yPos = (-0.3 + param * 0.6) * maxRadius * axialStretch;
+            const y3d = yPos + Math.sin(param * Math.PI * 2) * radius * 0.1;
+            
+            const camZ = maxRadius * 2;
+            const perspectiveFactor = camZ / (camZ + z3d);
+            
+            const x2d = cx + x3d * perspectiveFactor * (1 + explodeFactor * param);
+            const y2d = cy + y3d * perspectiveFactor * (1 + explodeFactor * param);
+            
+            tendril.points.push({ x: x2d, y: y2d });
+            
+            if (i === Math.floor(numPoints / 2)) {
+                tendril.depth = z3d;
+            }
+        }
+        
+        // Tendrils are cyan with transparency (deterministic)
+        tendril.color = {
+            r: 34 + trand5 * 40,
+            g: 211,
+            b: 238
+        };
+        tendril.width = 0.4 + trand6 * 0.4;
+        tendril.opacity = 0.1 + seededRandom(tseed + 6) * 0.15 + singularityFactor * 0.2;
+        
+        filaments.push(tendril);
+    }
+    
+    // Depth sort: back-to-front (painter's algorithm)
+    filaments.sort((a, b) => a.depth - b.depth);
+    
+    // Draw all filaments
+    for (const fil of filaments) {
+        if (fil.points.length < 2) continue;
+        
+        ctx.beginPath();
+        ctx.moveTo(fil.points[0].x, fil.points[0].y);
+        
+        for (let i = 1; i < fil.points.length; i++) {
+            ctx.lineTo(fil.points[i].x, fil.points[i].y);
+        }
+        
+        ctx.strokeStyle = `rgba(${Math.round(fil.color.r)}, ${Math.round(fil.color.g)}, ${Math.round(fil.color.b)}, ${fil.opacity})`;
+        ctx.lineWidth = fil.width;
     // Draw multiple helical strands creating a tube bundle (spaghetti vortex)
     // Draw from outside-in for proper depth ordering
     const strandsData = [];
@@ -383,7 +625,7 @@ function drawVortex() {
     
     // Central singularity glow
     if (singularityFactor > 0.3) {
-        const glowRadius = 15 * (1 - singularityFactor * 0.5) + 5 + (vortexState.isExploding ? 20 : 0);
+        const glowRadius = 20 * (1 - singularityFactor * 0.4) + 8 + (vortexState.isExploding ? 25 : 0);
         const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
         glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.9})`);
         glowGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
