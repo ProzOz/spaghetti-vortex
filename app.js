@@ -226,8 +226,8 @@ function drawExplodeParticles() {
     });
 }
 
-// Draw cartoon vortex (3D spiral with cos/sin geometry)
-// Teal/cyan outer (slow) → orange/amber inner (fast)
+// Draw dense 3D filament vortex matching OpenAI Navier-Stokes visualization
+// Key features: inward spiral + axial stretching, depth-sorted thin tubes
 function drawVortex() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -255,65 +255,134 @@ function drawVortex() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // 3D spiral parameters: tightness and vertical elongation
-    const numSpirals = 5 + Math.floor(vortexState.beatIndex * 2);
-    const maxRadius = Math.min(w, h) * 0.35;
-    const tightness = 0.5 + singularityFactor * 3.0 * vortexState.stretch;
-    const elongation = 1.0 + singularityFactor * 4.5 * vortexState.stretch;
+    // Dense filament pack: many thin tubes
+    const numFilaments = 80 + Math.floor(singularityFactor * 100);
+    const maxRadius = Math.min(w, h) * 0.4;
+    
+    // Axial stretching: vertical elongation that increases with singularity
+    const axialStretch = 1.2 + singularityFactor * 2.5 * vortexState.stretch;
+    
+    // Inward spiral tightness
+    const spiralTightness = 3.0 + singularityFactor * 6.0 * vortexState.spin;
     
     // Explode effect: burst outward
     const explodeFactor = vortexState.isExploding ? Math.sin(vortexState.explodeProgress * Math.PI) * 2.5 : 0;
     
-    // Draw multiple spiral strands (spaghetti)
-    for (let spiralIdx = 0; spiralIdx < numSpirals; spiralIdx++) {
-        const spiralOffset = (spiralIdx / numSpirals) * Math.PI * 2;
+    // Build filaments with 3D depth data
+    const filaments = [];
+    
+    for (let fIdx = 0; fIdx < numFilaments; fIdx++) {
+        const filament = {
+            points: [],
+            depth: 0,
+            color: { r: 0, g: 0, b: 0 },
+            opacity: 0,
+            width: 0
+        };
         
-        ctx.beginPath();
+        // Each filament starts at a different angular position
+        const baseAngle = (fIdx / numFilaments) * Math.PI * 2;
         
-        for (let i = 0; i <= 100; i++) {
-            const param = i / 100;
-            const radiusNorm = 1 - param;
+        // Random radial offset for volume density
+        const radialStart = 0.7 + Math.random() * 0.3;
+        
+        // Random phase offset for helix variation
+        const phaseOffset = Math.random() * Math.PI * 2;
+        
+        // Sample points along the filament (outer → center)
+        const numPoints = 40;
+        for (let i = 0; i < numPoints; i++) {
+            const param = i / (numPoints - 1);
             
-            // Inward spiral angle
-            const angle = param * Math.PI * 6 * tightness + spiralOffset;
-            const radius = maxRadius * radiusNorm * (1 - singularityFactor * 0.6);
+            // Radius decreases inward (inward spiral)
+            const radiusNorm = (1 - param) * radialStart;
+            const radius = maxRadius * radiusNorm * (1 - singularityFactor * 0.5);
             
-            // Spin rotation (faster near center)
-            const spinSpeed = 0.3 + (1 - radiusNorm) * 2.0;
-            const spinAngle = angle * vortexState.spin + t * Math.PI * 2 * spinSpeed;
+            // Helical angle: spirals inward with multiple turns
+            const helixAngle = baseAngle + param * Math.PI * spiralTightness;
             
-            // 3D spiral position: x = cos(spinAngle)*r, y = cy + sin(spinAngle)*r/elongation
-            let x = cx + Math.cos(spinAngle) * radius * (1 + explodeFactor * param);
-            let y = cy + Math.sin(spinAngle) * radius / elongation * (1 + explodeFactor * param);
+            // 3D position using cylindrical coords with axial stretching
+            // x,z = radial plane (horizontal circle)
+            // y = axial (vertical stretch)
+            const x3d = Math.cos(helixAngle) * radius;
+            const z3d = Math.sin(helixAngle) * radius;
             
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
+            // Axial coordinate: stretched vertically, concentrated at center
+            const yBase = (param - 0.5) * maxRadius * axialStretch;
+            
+            // Add small sinusoidal wobble for filament character
+            const wobble = Math.sin(param * Math.PI * 4 + phaseOffset) * radius * 0.08;
+            const y3d = yBase + wobble;
+            
+            // Project to 2D with perspective depth
+            // Camera at z = -maxRadius*2, looking at origin
+            const camZ = maxRadius * 2;
+            const perspectiveFactor = camZ / (camZ + z3d);
+            
+            const x2d = cx + x3d * perspectiveFactor * (1 + explodeFactor * param);
+            const y2d = cy + y3d * perspectiveFactor * (1 + explodeFactor * param);
+            
+            filament.points.push({ x: x2d, y: y2d });
+            
+            // Track average depth (z) for sorting
+            if (i === Math.floor(numPoints / 2)) {
+                filament.depth = z3d;
             }
         }
         
-        // Color gradient: outer cyan/teal → inner orange/amber
-        const outerMix = spiralIdx / numSpirals;
-        let color;
-        if (outerMix < 0.4) {
-            color = { r: 251, g: 146, b: 60 };
-        } else if (outerMix < 0.7) {
-            const mix = (outerMix - 0.4) / 0.3;
-            color = {
-                r: 251 - mix * (251 - 34),
-                g: 146 + mix * (211 - 146),
-                b: 60 + mix * (238 - 60)
+        // Color based on radial position (core = orange, outer = cyan)
+        const coreDistance = radiusNorm;
+        if (coreDistance < 0.3) {
+            // Inner core: orange/copper
+            const coreMix = coreDistance / 0.3;
+            filament.color = {
+                r: 251,
+                g: 146 + coreMix * (180 - 146),
+                b: 60
+            };
+        } else if (coreDistance < 0.6) {
+            // Mid transition: orange → blue
+            const midMix = (coreDistance - 0.3) / 0.3;
+            filament.color = {
+                r: 251 - midMix * (251 - 70),
+                g: 180 + midMix * (130 - 180),
+                b: 60 + midMix * (220 - 60)
             };
         } else {
-            color = { r: 34, g: 211, b: 238 };
+            // Outer: cyan/bright blue
+            const outerMix = (coreDistance - 0.6) / 0.4;
+            filament.color = {
+                r: 70 - outerMix * 36,
+                g: 130 + outerMix * 81,
+                b: 220 + outerMix * 18
+            };
         }
         
-        const opacity = 0.3 + singularityFactor * 0.4 + (vortexState.isExploding ? 0.3 : 0);
-        const lineWidth = 2 + singularityFactor * 3 + (vortexState.isExploding ? 2 : 0);
+        // Thin filaments, slight thickness variation
+        filament.width = 0.8 + Math.random() * 0.6 + singularityFactor * 0.4;
         
-        ctx.strokeStyle = `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${opacity})`;
-        ctx.lineWidth = lineWidth;
+        // Opacity increases with singularity
+        filament.opacity = 0.25 + singularityFactor * 0.35 + (vortexState.isExploding ? 0.25 : 0);
+        
+        filaments.push(filament);
+    }
+    
+    // Depth sort: back-to-front (painter's algorithm)
+    filaments.sort((a, b) => a.depth - b.depth);
+    
+    // Draw all filaments
+    for (const fil of filaments) {
+        if (fil.points.length < 2) continue;
+        
+        ctx.beginPath();
+        ctx.moveTo(fil.points[0].x, fil.points[0].y);
+        
+        for (let i = 1; i < fil.points.length; i++) {
+            ctx.lineTo(fil.points[i].x, fil.points[i].y);
+        }
+        
+        ctx.strokeStyle = `rgba(${Math.round(fil.color.r)}, ${Math.round(fil.color.g)}, ${Math.round(fil.color.b)}, ${fil.opacity})`;
+        ctx.lineWidth = fil.width;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke();
@@ -321,7 +390,7 @@ function drawVortex() {
     
     // Central singularity glow
     if (singularityFactor > 0.3) {
-        const glowRadius = 15 * (1 - singularityFactor * 0.5) + 5 + (vortexState.isExploding ? 20 : 0);
+        const glowRadius = 20 * (1 - singularityFactor * 0.4) + 8 + (vortexState.isExploding ? 25 : 0);
         const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
         glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.9})`);
         glowGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
