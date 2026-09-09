@@ -44,7 +44,7 @@ docker build -t spaghetti-vortex .
 docker run -p 8080:80 spaghetti-vortex
 ```
 
-**Coolify note:** Point at this repo, Dockerfile is included. Nginx serves on port 80.
+**Coolify note:** Point at this repo, Dockerfile is included. Nginx serves on port 80. For production, enable HTTPS/Let's Encrypt on your domain or sslip.io subdomain. iPhone Safari users often fail with HTTP-only URLs.
 
 ## Design Credits
 
