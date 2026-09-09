@@ -106,6 +106,34 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 });
 
 // ============================================================================
+// PREVENT TEXT SELECTION DURING INTERACTIONS
+// ============================================================================
+
+// Prevent selectstart event globally on document
+document.addEventListener('selectstart', (e) => {
+    // Allow text selection only in specific non-interactive areas
+    const target = e.target;
+    const allowSelection = target.tagName === 'A' || 
+                          target.closest('.lang-toggle') ||
+                          target.closest('.why-section') ||
+                          target.closest('.footer');
+    
+    if (!allowSelection) {
+        e.preventDefault();
+    }
+});
+
+// Clear any accidental selection on pointer events
+function clearSelection() {
+    if (window.getSelection) {
+        const selection = window.getSelection();
+        if (selection && selection.removeAllRanges) {
+            selection.removeAllRanges();
+        }
+    }
+}
+
+// ============================================================================
 // VORTEX CANVAS ANIMATION
 // ============================================================================
 
@@ -687,15 +715,17 @@ function handleScrubberMove(clientX) {
 
 scrubberTrack.addEventListener('mousedown', (e) => {
     e.preventDefault();
+    clearSelection();
     isDraggingScrubber = true;
     handleScrubberMove(e.clientX);
 });
 
 scrubberTrack.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    clearSelection();
     isDraggingScrubber = true;
     handleScrubberMove(e.touches[0].clientX);
-});
+}, { passive: false });
 
 document.addEventListener('mousemove', (e) => {
     if (isDraggingScrubber) {
@@ -709,7 +739,7 @@ document.addEventListener('touchmove', (e) => {
         e.preventDefault();
         handleScrubberMove(e.touches[0].clientX);
     }
-});
+}, { passive: false });
 
 document.addEventListener('mouseup', () => {
     isDraggingScrubber = false;
@@ -729,6 +759,7 @@ let lastCanvasY = 0;
 
 canvas.addEventListener('mousedown', (e) => {
     e.preventDefault();
+    clearSelection();
     isDraggingCanvas = true;
     lastCanvasX = e.clientX;
     lastCanvasY = e.clientY;
@@ -737,11 +768,12 @@ canvas.addEventListener('mousedown', (e) => {
 canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
         e.preventDefault();
+        clearSelection();
         isDraggingCanvas = true;
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
     }
-});
+}, { passive: false });
 
 document.addEventListener('mousemove', (e) => {
     if (isDraggingCanvas) {
@@ -782,7 +814,7 @@ document.addEventListener('touchmove', (e) => {
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
     }
-});
+}, { passive: false });
 
 document.addEventListener('mouseup', () => {
     isDraggingCanvas = false;
