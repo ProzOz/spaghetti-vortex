@@ -283,23 +283,40 @@ function drawVortex() {
         // Each filament starts at a different angular position
         const baseAngle = (fIdx / numFilaments) * Math.PI * 2;
         
-        // Random radial offset for volume density
-        const radialStart = 0.7 + Math.random() * 0.3;
+        // Wider radial variation: some start from core, some from far out
+        const radialStart = 0.3 + Math.random() * 0.7;
+        
+        // Some filaments are "wild" - they splay out at edges
+        const isWildFilament = Math.random() < 0.3;
+        const wildnessFactor = isWildFilament ? 1.5 + Math.random() * 1.0 : 1.0;
         
         // Random phase offset for helix variation
         const phaseOffset = Math.random() * Math.PI * 2;
         
+        // Vary spiral direction slightly for more chaos
+        const spiralVariation = 0.8 + Math.random() * 0.4;
+        
         // Sample points along the filament (outer → center)
-        const numPoints = 40;
+        const numPoints = 35 + Math.floor(Math.random() * 15);
         for (let i = 0; i < numPoints; i++) {
             const param = i / (numPoints - 1);
             
-            // Radius decreases inward (inward spiral)
+            // Radius decreases inward (inward spiral) but with turbulence
             const radiusNorm = (1 - param) * radialStart;
-            const radius = maxRadius * radiusNorm * (1 - singularityFactor * 0.5);
+            let radius = maxRadius * radiusNorm * (1 - singularityFactor * 0.5);
             
-            // Helical angle: spirals inward with multiple turns
-            const helixAngle = baseAngle + param * Math.PI * spiralTightness;
+            // Wild filaments splay out at the edges
+            if (isWildFilament && param < 0.3) {
+                const edgeSplay = Math.pow(1 - param / 0.3, 1.5) * wildnessFactor;
+                radius *= edgeSplay;
+            }
+            
+            // Add turbulent noise to radius for organic feel
+            const turbulence = (Math.random() - 0.5) * 0.15 * radius;
+            radius += turbulence;
+            
+            // Helical angle: spirals inward with multiple turns + variation
+            const helixAngle = baseAngle + param * Math.PI * spiralTightness * spiralVariation;
             
             // 3D position using cylindrical coords with axial stretching
             // x,z = radial plane (horizontal circle)
@@ -308,11 +325,14 @@ function drawVortex() {
             const z3d = Math.sin(helixAngle) * radius;
             
             // Axial coordinate: stretched vertically, concentrated at center
-            const yBase = (param - 0.5) * maxRadius * axialStretch;
+            // Add asymmetry - more spread at top
+            const verticalBias = param * 0.3;
+            const yBase = (param - 0.5 + verticalBias) * maxRadius * axialStretch;
             
-            // Add small sinusoidal wobble for filament character
-            const wobble = Math.sin(param * Math.PI * 4 + phaseOffset) * radius * 0.08;
-            const y3d = yBase + wobble;
+            // Add stronger sinusoidal wobble + noise for filament character
+            const wobble = Math.sin(param * Math.PI * 5 + phaseOffset) * radius * 0.12;
+            const noiseY = (Math.random() - 0.5) * radius * 0.08;
+            const y3d = yBase + wobble + noiseY;
             
             // Project to 2D with perspective depth
             // Camera at z = -maxRadius*2, looking at origin
@@ -331,40 +351,100 @@ function drawVortex() {
         }
         
         // Color based on radial position (core = orange, outer = cyan)
-        const coreDistance = radiusNorm;
-        if (coreDistance < 0.3) {
-            // Inner core: orange/copper
-            const coreMix = coreDistance / 0.3;
+        // More orange in the core to match reference
+        const coreDistance = radialStart;
+        if (coreDistance < 0.45) {
+            // Inner core: orange/copper dominant
+            const coreMix = coreDistance / 0.45;
             filament.color = {
                 r: 251,
-                g: 146 + coreMix * (180 - 146),
-                b: 60
+                g: 146 + coreMix * (200 - 146),
+                b: 60 + coreMix * 20
             };
-        } else if (coreDistance < 0.6) {
-            // Mid transition: orange → blue
-            const midMix = (coreDistance - 0.3) / 0.3;
+        } else if (coreDistance < 0.7) {
+            // Mid transition: orange → purple/blue
+            const midMix = (coreDistance - 0.45) / 0.25;
             filament.color = {
-                r: 251 - midMix * (251 - 70),
-                g: 180 + midMix * (130 - 180),
-                b: 60 + midMix * (220 - 60)
+                r: 251 - midMix * (251 - 80),
+                g: 200 - midMix * (200 - 120),
+                b: 80 + midMix * (200 - 80)
             };
         } else {
             // Outer: cyan/bright blue
-            const outerMix = (coreDistance - 0.6) / 0.4;
+            const outerMix = (coreDistance - 0.7) / 0.3;
             filament.color = {
-                r: 70 - outerMix * 36,
-                g: 130 + outerMix * 81,
-                b: 220 + outerMix * 18
+                r: 80 - outerMix * 46,
+                g: 120 + outerMix * 91,
+                b: 200 + outerMix * 38
             };
         }
         
-        // Thin filaments, slight thickness variation
-        filament.width = 0.8 + Math.random() * 0.6 + singularityFactor * 0.4;
+        // Thin filaments, more variation in thickness
+        filament.width = 0.6 + Math.random() * 0.8 + singularityFactor * 0.5;
+        if (isWildFilament) {
+            filament.width *= 0.7;
+        }
         
-        // Opacity increases with singularity
-        filament.opacity = 0.25 + singularityFactor * 0.35 + (vortexState.isExploding ? 0.25 : 0);
+        // Opacity variation for depth effect
+        const opacityBase = 0.2 + Math.random() * 0.2 + singularityFactor * 0.35;
+        filament.opacity = opacityBase + (vortexState.isExploding ? 0.25 : 0);
         
         filaments.push(filament);
+    }
+    
+    // Add wild outer tendrils for visual richness (like the reference image)
+    const numTendrils = Math.floor(20 + singularityFactor * 30);
+    for (let tIdx = 0; tIdx < numTendrils; tIdx++) {
+        const tendril = {
+            points: [],
+            depth: 0,
+            color: { r: 0, g: 0, b: 0 },
+            opacity: 0,
+            width: 0
+        };
+        
+        const angle = (tIdx / numTendrils) * Math.PI * 2 + Math.random() * 0.5;
+        const startRadius = maxRadius * (0.6 + Math.random() * 0.3);
+        const endRadius = maxRadius * (1.2 + Math.random() * 0.5);
+        
+        const numPoints = 10 + Math.floor(Math.random() * 8);
+        for (let i = 0; i < numPoints; i++) {
+            const param = i / (numPoints - 1);
+            const radius = startRadius + (endRadius - startRadius) * Math.pow(param, 1.5);
+            
+            // Slight angular sweep
+            const sweepAngle = angle + param * 0.4 * Math.sin(angle * 3);
+            
+            const x3d = Math.cos(sweepAngle) * radius;
+            const z3d = Math.sin(sweepAngle) * radius;
+            
+            // Vertical position biased toward top/mid
+            const yPos = (-0.3 + param * 0.6) * maxRadius * axialStretch;
+            const y3d = yPos + Math.sin(param * Math.PI * 2) * radius * 0.1;
+            
+            const camZ = maxRadius * 2;
+            const perspectiveFactor = camZ / (camZ + z3d);
+            
+            const x2d = cx + x3d * perspectiveFactor * (1 + explodeFactor * param);
+            const y2d = cy + y3d * perspectiveFactor * (1 + explodeFactor * param);
+            
+            tendril.points.push({ x: x2d, y: y2d });
+            
+            if (i === Math.floor(numPoints / 2)) {
+                tendril.depth = z3d;
+            }
+        }
+        
+        // Tendrils are cyan with transparency
+        tendril.color = {
+            r: 34 + Math.random() * 40,
+            g: 211,
+            b: 238
+        };
+        tendril.width = 0.4 + Math.random() * 0.4;
+        tendril.opacity = 0.1 + Math.random() * 0.15 + singularityFactor * 0.2;
+        
+        filaments.push(tendril);
     }
     
     // Depth sort: back-to-front (painter's algorithm)
