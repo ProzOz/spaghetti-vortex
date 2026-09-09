@@ -140,18 +140,41 @@ function clearSelection() {
 const canvas = document.getElementById('vortexCanvas');
 const ctx = canvas.getContext('2d');
 
-// Set canvas resolution
+// Set canvas resolution with proper HiDPI handling
 function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Guard against zero-size rect (iOS layout timing)
+    if (rect.width < 1 || rect.height < 1) {
+        requestAnimationFrame(resizeCanvas);
+        return;
+    }
+    
+    const w = Math.max(1, Math.floor(rect.width * dpr));
+    const h = Math.max(1, Math.floor(rect.height * dpr));
+    
+    // Only resize if dimensions changed
+    if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+    }
+    
+    // CRITICAL: setTransform instead of scale to prevent accumulation
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
 }
 
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', resizeCanvas);
+
+// Handle visual viewport changes on mobile
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resizeCanvas);
+}
 
 // Vortex state
 let vortexState = {
@@ -254,6 +277,14 @@ function drawExplodeParticles() {
     });
 }
 
+// Detect mobile for performance optimizations
+const isMobile = (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) ||
+    window.matchMedia('(pointer: coarse)').matches ||
+    window.innerWidth <= 768
+);
+
 // Simple deterministic hash for stable filament parameters
 function hash(n) {
     n = (n ^ 61) ^ (n >>> 16);
@@ -273,6 +304,10 @@ function seededRandom(seed) {
 // Draw dense 3D filament vortex matching OpenAI Navier-Stokes visualization
 // Key features: inward spiral + axial stretching, depth-sorted thin tubes
 function drawVortex() {
+    // Ensure canvas transform is correct before drawing
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     const cx = w / 2;
@@ -299,8 +334,10 @@ function drawVortex() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // Dense filament pack: many thin tubes
-    const numFilaments = 80 + Math.floor(singularityFactor * 100);
+    // Dense filament pack: many thin tubes (reduced on mobile for performance)
+    const baseFilaments = isMobile ? 40 : 80;
+    const maxExtraFilaments = isMobile ? 30 : 100;
+    const numFilaments = baseFilaments + Math.floor(singularityFactor * maxExtraFilaments);
     const maxRadius = Math.min(w, h) * 0.4;
     
     // Axial stretching: vertical elongation that increases with singularity
@@ -347,8 +384,10 @@ function drawVortex() {
         // Vary spiral direction slightly for more chaos
         const spiralVariation = 0.8 + seededRandom(seed + 4) * 0.4;
         
-        // Sample points along the filament (outer → center)
-        const numPoints = 35 + Math.floor(seededRandom(seed + 5) * 15);
+        // Sample points along the filament (outer → center) - fewer on mobile
+        const basePoints = isMobile ? 20 : 35;
+        const extraPoints = isMobile ? 8 : 15;
+        const numPoints = basePoints + Math.floor(seededRandom(seed + 5) * extraPoints);
         for (let i = 0; i < numPoints; i++) {
             const param = i / (numPoints - 1);
             
@@ -454,8 +493,10 @@ function drawVortex() {
         filaments.push(filament);
     }
     
-    // Add wild outer tendrils for visual richness (like the reference image)
-    const numTendrils = Math.floor(20 + singularityFactor * 30);
+    // Add wild outer tendrils for visual richness (reduced on mobile)
+    const baseTendrils = isMobile ? 10 : 20;
+    const maxExtraTendrils = isMobile ? 15 : 30;
+    const numTendrils = Math.floor(baseTendrils + singularityFactor * maxExtraTendrils);
     for (let tIdx = 0; tIdx < numTendrils; tIdx++) {
         const tendril = {
             points: [],
@@ -478,7 +519,9 @@ function drawVortex() {
         const startRadius = maxRadius * (0.6 + trand2 * 0.3);
         const endRadius = maxRadius * (1.2 + trand3 * 0.5);
         
-        const numPoints = 10 + Math.floor(trand4 * 8);
+        const tendrilPoints = isMobile ? 6 : 10;
+        const tendrilExtraPoints = isMobile ? 4 : 8;
+        const numPoints = tendrilPoints + Math.floor(trand4 * tendrilExtraPoints);
         for (let i = 0; i < numPoints; i++) {
             const param = i / (numPoints - 1);
             const radius = startRadius + (endRadius - startRadius) * Math.pow(param, 1.5);
@@ -805,10 +848,10 @@ scrubberTrack.addEventListener('mousedown', (e) => {
 });
 
 scrubberTrack.addEventListener('touchstart', (e) => {
-    e.preventDefault();
     clearSelection();
     isDraggingScrubber = true;
     handleScrubberMove(e.touches[0].clientX);
+    e.preventDefault();
 }, { passive: false });
 
 document.addEventListener('mousemove', (e) => {
@@ -851,11 +894,11 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
-        e.preventDefault();
         clearSelection();
         isDraggingCanvas = true;
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
+        e.preventDefault();
     }
 }, { passive: false });
 
@@ -949,6 +992,9 @@ Object.keys(sliders).forEach(key => {
 // ============================================================================
 
 function init() {
+    // Ensure canvas is properly sized before first draw
+    resizeCanvas();
+    
     updateScrubberPosition();
     updateBeatIndicator();
     updateMetrics();
