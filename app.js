@@ -133,6 +133,11 @@ let vortexState = {
 };
 
 // Draw cartoon vortex (spaghetti spiral)
+// Matches OpenAI official visualization:
+// - Cyan/bright teal outer strands (slow rotation)
+// - Orange/amber inner strands (fast rotation)
+// - Blue/purple mid-range transitions
+// - 3D helical tubes wrapping vertical axis with axial stretching
 function drawVortex() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -141,10 +146,10 @@ function drawVortex() {
     
     ctx.clearRect(0, 0, w, h);
     
-    // Background gradient
+    // Dark background matching OpenAI image
     const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) / 2);
-    bgGrad.addColorStop(0, '#1a1a2e');
-    bgGrad.addColorStop(1, '#0f0f1e');
+    bgGrad.addColorStop(0, '#0d0d12');
+    bgGrad.addColorStop(1, '#050508');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
     
@@ -153,50 +158,104 @@ function drawVortex() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // Beat-based behavior
-    const numSpirals = 3 + Math.floor(vortexState.beatIndex);
-    const maxRadius = Math.min(w, h) * 0.35;
-    const tightness = 0.5 + singularityFactor * 2.0 * vortexState.stretch;
-    const elongation = 1.0 + singularityFactor * 2.5 * vortexState.stretch;
+    // Strong axial stretching (vertical elongation like OpenAI image)
+    const axialStretch = 1.2 + singularityFactor * 4.5 * vortexState.stretch;
+    const radialShrink = 1 - singularityFactor * 0.75;
     
-    // Draw multiple spiral ribbons (spaghetti strands)
-    for (let spiralIdx = 0; spiralIdx < numSpirals; spiralIdx++) {
-        const spiralOffset = (spiralIdx / numSpirals) * Math.PI * 2;
-        const hue = 200 + spiralIdx * 30;
+    // Multiple helical strands (tube-like ribbons)
+    const numStrands = 8 + Math.floor(vortexState.beatIndex * 2);
+    const maxRadius = Math.min(w, h) * 0.32;
+    
+    // Draw 3D helical tube strands
+    for (let strandIdx = 0; strandIdx < numStrands; strandIdx++) {
+        const strandPhase = (strandIdx / numStrands) * Math.PI * 2;
+        const helixPhase = strandIdx * 0.3; // Offset for 3D helix effect
         
-        ctx.beginPath();
+        const points = [];
         
+        // Generate helical spiral points
         for (let i = 0; i <= 100; i++) {
-            const angle = (i / 100) * Math.PI * 6 * tightness + spiralOffset;
-            const radius = maxRadius * (1 - i / 100) * (1 - singularityFactor * 0.7);
+            const t_param = i / 100;
+            const radiusNorm = 1 - t_param; // 1 (outer) to 0 (center)
             
-            const spinAngle = angle * vortexState.spin + t * Math.PI * 2;
+            // Inward spiral with multiple turns
+            const spiralTurns = 4 + singularityFactor * 5;
+            const theta = radiusNorm * Math.PI * 2 * spiralTurns + strandPhase;
+            
+            // Angular velocity (faster rotation near center)
+            const angularSpeed = 0.4 + (1 - radiusNorm) * 3.0 * vortexState.spin;
+            const spinAngle = theta + t * Math.PI * 2 * angularSpeed + helixPhase;
+            
+            // Radius shrinks inward
+            const radius = maxRadius * radiusNorm * radialShrink;
+            
+            // Vertical position (axial stretching)
+            const verticalOffset = (t_param - 0.5) * h * 0.6 / axialStretch;
+            
+            // 3D helical position
             const x = cx + Math.cos(spinAngle) * radius;
-            const y = cy + Math.sin(spinAngle) * radius / elongation;
+            const y = cy + verticalOffset;
             
-            if (i === 0) {
-                ctx.moveTo(x, y);
+            // Color transition: outer cyan → mid blue/purple → inner orange
+            // Based on radius (distance from center)
+            let color;
+            if (radiusNorm > 0.65) {
+                // Outer region: bright cyan/teal (slow rotation)
+                color = { r: 34, g: 211, b: 238 }; // #22d3ee bright cyan
+            } else if (radiusNorm > 0.35) {
+                // Mid region: blue/purple transition
+                const midFactor = (radiusNorm - 0.35) / 0.3;
+                const cyan = { r: 34, g: 211, b: 238 };
+                const purple = { r: 96, g: 165, b: 250 }; // #60a5fa blue
+                color = {
+                    r: purple.r + (cyan.r - purple.r) * midFactor,
+                    g: purple.g + (cyan.g - purple.g) * midFactor,
+                    b: purple.b + (cyan.b - purple.b) * midFactor
+                };
             } else {
-                ctx.lineTo(x, y);
+                // Inner region: orange/amber (fast rotation)
+                const innerFactor = radiusNorm / 0.35;
+                const orange = { r: 251, g: 146, b: 60 }; // #fb923c
+                const amber = { r: 217, g: 119, b: 6 }; // #d97706
+                color = {
+                    r: amber.r + (orange.r - amber.r) * innerFactor,
+                    g: amber.g + (orange.g - amber.g) * innerFactor,
+                    b: amber.b + (orange.b - amber.b) * innerFactor
+                };
             }
+            
+            points.push({ x, y, radiusNorm, color });
         }
         
-        const opacity = 0.3 + singularityFactor * 0.4;
-        const lineWidth = 2 + singularityFactor * 4;
-        
-        ctx.strokeStyle = `hsla(${hue}, 70%, ${50 + singularityFactor * 30}%, ${opacity})`;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
+        // Draw strand as connected tube segments
+        for (let i = 0; i < points.length - 1; i++) {
+            const p = points[i];
+            const pNext = points[i + 1];
+            
+            // Line width: thicker in outer regions, thinner near center
+            const lineWidth = 1.0 + p.radiusNorm * 2.5 + singularityFactor * 1.5;
+            
+            // Opacity: more visible outer strands
+            const opacity = 0.5 + p.radiusNorm * 0.35 + singularityFactor * 0.15;
+            
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(pNext.x, pNext.y);
+            ctx.strokeStyle = `rgba(${Math.round(p.color.r)}, ${Math.round(p.color.g)}, ${Math.round(p.color.b)}, ${opacity})`;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
     }
     
-    // Draw center concentration point (singularity visualization)
-    if (singularityFactor > 0.3) {
-        const glowRadius = 15 * (1 - singularityFactor) + 3;
+    // Central concentration glow (orange singularity)
+    if (singularityFactor > 0.35) {
+        const glowRadius = 10 * (1 - singularityFactor * 0.4) + 5;
         const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
-        glowGrad.addColorStop(0, `rgba(139, 92, 246, ${singularityFactor})`);
-        glowGrad.addColorStop(1, 'rgba(139, 92, 246, 0)');
+        glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.9})`);
+        glowGrad.addColorStop(0.6, `rgba(217, 119, 6, ${singularityFactor * 0.4})`);
+        glowGrad.addColorStop(1, 'rgba(217, 119, 6, 0)');
         ctx.fillStyle = glowGrad;
         ctx.fillRect(cx - glowRadius, cy - glowRadius, glowRadius * 2, glowRadius * 2);
     }
@@ -293,26 +352,30 @@ function handleScrubberMove(clientX) {
 }
 
 scrubberTrack.addEventListener('mousedown', (e) => {
+    e.preventDefault();
     isDraggingScrubber = true;
     handleScrubberMove(e.clientX);
 });
 
 scrubberTrack.addEventListener('touchstart', (e) => {
+    e.preventDefault();
     isDraggingScrubber = true;
     handleScrubberMove(e.touches[0].clientX);
-}, { passive: true });
+});
 
 document.addEventListener('mousemove', (e) => {
     if (isDraggingScrubber) {
+        e.preventDefault();
         handleScrubberMove(e.clientX);
     }
 });
 
 document.addEventListener('touchmove', (e) => {
     if (isDraggingScrubber) {
+        e.preventDefault();
         handleScrubberMove(e.touches[0].clientX);
     }
-}, { passive: true });
+});
 
 document.addEventListener('mouseup', () => {
     isDraggingScrubber = false;
@@ -331,6 +394,7 @@ let lastCanvasX = 0;
 let lastCanvasY = 0;
 
 canvas.addEventListener('mousedown', (e) => {
+    e.preventDefault();
     isDraggingCanvas = true;
     lastCanvasX = e.clientX;
     lastCanvasY = e.clientY;
@@ -338,14 +402,16 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
+        e.preventDefault();
         isDraggingCanvas = true;
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
     }
-}, { passive: true });
+});
 
 document.addEventListener('mousemove', (e) => {
     if (isDraggingCanvas) {
+        e.preventDefault();
         const deltaX = e.clientX - lastCanvasX;
         const deltaY = e.clientY - lastCanvasY;
         
@@ -367,6 +433,7 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('touchmove', (e) => {
     if (isDraggingCanvas && e.touches.length === 1) {
+        e.preventDefault();
         const deltaX = e.touches[0].clientX - lastCanvasX;
         const deltaY = e.touches[0].clientY - lastCanvasY;
         
@@ -381,7 +448,7 @@ document.addEventListener('touchmove', (e) => {
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
     }
-}, { passive: true });
+});
 
 document.addEventListener('mouseup', () => {
     isDraggingCanvas = false;
