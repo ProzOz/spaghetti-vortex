@@ -9,51 +9,56 @@
 
 const translations = {
     en: {
-        "honesty": "Teaching cartoon. Not a numerical solver. Not claiming the Millennium Prize.",
-        "title": "The Spaghetti Vortex",
-        "subtitle": "How a smooth fluid can blow up",
-        "beat-1": "Fluid at rest",
-        "beat-2": "Smooth force applied",
-        "beat-3": "Spaghetti stretch",
-        "beat-4": "Speed explodes, energy stays finite",
+        "honesty": "Interactive visualization of OpenAI's Navier–Stokes singularity construction. Not a numerical solver.",
+        "title": "Singularity in a Glass of Water",
+        "subtitle": "Exploring OpenAI's construction of finite-time blow-up",
+        "beat-1": "Quiescent State",
+        "beat-1-desc": "Zero velocity field. Perfectly still.",
+        "beat-2": "Smooth Forcing",
+        "beat-2-desc": "External force applied. No discontinuities.",
+        "beat-3": "Vortex Concentration",
+        "beat-3-desc": "Inward spiral. Velocity climbing. Energy finite.",
+        "beat-4": "Finite-Time Singularity",
+        "beat-4-desc": "Speed → ∞. Kinetic energy remains bounded.",
         "beat-1-short": "Rest",
         "beat-2-short": "Force",
-        "beat-3-short": "Stretch",
-        "beat-4-short": "Singularity",
-        "metric-speed": "Speed",
+        "beat-3-short": "Spiral",
+        "beat-4-short": "Blow-up",
+        "metric-speed": "Velocity",
         "metric-energy": "Energy",
         "metric-force": "Force",
         "controls-title": "Parameters",
         "param-time": "Time",
         "param-viscosity": "Viscosity",
         "param-stretch": "Stretch",
-        "param-spin": "Spin",
-        "story-1-title": "Fluid at Rest",
-        "story-1-body": "Our fluid begins perfectly still, with zero velocity everywhere. Think of a calm, motionless pool of water before anything disturbs it.",
-        "story-2-title": "Smooth Force Applied",
-        "story-2-body": "A smooth external force begins to act on the fluid, setting it into gentle motion. The force stays smooth — no sudden spikes, no infinities.",
-        "story-3-title": "Spaghetti Stretch",
-        "story-3-body": "The vortex spirals inward and elongates like spaghetti. It concentrates, speeding up as it shrinks, but the energy remains finite — the key constraint from physics.",
-        "story-4-title": "Speed Explodes, Energy Stays Finite",
-        "story-4-body": "In finite time, the fluid velocity grows without bound — a singularity. Yet kinetic energy remains finite, as the laws of physics demand. The continuum model breaks down.",
-        "lean-title": "Formalized Proof",
-        "lean-body": "This result was produced by AI agents and formalized in Lean, a proof assistant that verifies mathematical correctness. The proof shows that smooth solutions to the Navier–Stokes equations can develop singularities.",
+        "param-spin": "Rotation",
+        "consequence-viscosity-low": "Low viscosity → sharper gradients",
+        "consequence-viscosity-high": "High viscosity → diffused flow",
+        "consequence-stretch-low": "Low stretch → compact vortex",
+        "consequence-stretch-high": "High stretch → elongated spiral",
+        "consequence-spin-low": "Slow rotation → loose spiral",
+        "consequence-spin-high": "Fast rotation → tight wind-up",
+        "why-title": "The Breakthrough",
+        "why-body": "OpenAI and collaborators constructed explicit smooth solutions to Navier–Stokes that develop singularities in finite time, formalized in Lean. The Clay Millennium Prize question remains open.",
         "link-lean": "Lean Formalization",
-        "link-openai": "OpenAI Announcement",
-        "footer": "Built with patterns from Mobbin screens: Brilliant lesson scaffolding, Artifact reader typography, Stripe metric cards, Linear property rails, Arc floating chrome, Mesh 3D hero stage, Noom video scrubber, Polarsteps filmstrip timeline."
+        "link-openai": "OpenAI Announcement"
     },
     th: {
-        "honesty": "การ์ตูนสอน ไม่ใช่ตัวแก้สมการจริง ไม่ได้อ้างรางวัล Millennium Prize",
-        "title": "กระแสน้ำวนสปาเก็ตตี้",
-        "subtitle": "ของไหลเรียบสามารถระเบิดได้อย่างไร",
-        "beat-1": "ของไหลหยุดนิ่ง",
-        "beat-2": "แรงเรียบกระทำ",
-        "beat-3": "ยืดเหมือนสปาเก็ตตี้",
-        "beat-4": "ความเร็วระเบิด พลังงานจำกัด",
+        "honesty": "การแสดงภาพเชิงโต้ตอบของ singularity Navier–Stokes จาก OpenAI ไม่ใช่ตัวแก้สมการเชิงตัวเลข",
+        "title": "Singularity ในแก้วน้ำ",
+        "subtitle": "สำรวจการสร้าง blow-up จาก OpenAI",
+        "beat-1": "สถานะนิ่ง",
+        "beat-1-desc": "สนามความเร็วเป็นศูนย์ นิ่งสนิท",
+        "beat-2": "แรงเรียบ",
+        "beat-2-desc": "แรงภายนอกกระทำ ไม่มีจุดไม่ต่อเนื่อง",
+        "beat-3": "การรวมตัวของวอร์เท็กซ์",
+        "beat-3-desc": "เกลียวเข้าด้านใน ความเร็วพุ่ง พลังงานจำกัด",
+        "beat-4": "Singularity ในเวลาจำกัด",
+        "beat-4-desc": "ความเร็ว → ∞ พลังงานจลน์ยังจำกัด",
         "beat-1-short": "พัก",
         "beat-2-short": "แรง",
-        "beat-3-short": "ยืด",
-        "beat-4-short": "จุดเอกฐาน",
+        "beat-3-short": "เกลียว",
+        "beat-4-short": "ระเบิด",
         "metric-speed": "ความเร็ว",
         "metric-energy": "พลังงาน",
         "metric-force": "แรง",
@@ -62,19 +67,16 @@ const translations = {
         "param-viscosity": "ความหนืด",
         "param-stretch": "การยืด",
         "param-spin": "การหมุน",
-        "story-1-title": "ของไหลหยุดนิ่ง",
-        "story-1-body": "ของไหลของเราเริ่มต้นด้วยความสงบนิ่งอย่างสมบูรณ์ ความเร็วเป็นศูนย์ทุกที่ คล้ายกับสระน้ำที่สงบก่อนที่สิ่งใดจะรบกวนมัน",
-        "story-2-title": "แรงเรียบกระทำ",
-        "story-2-body": "แรงภายนอกที่เรียบเริ่มกระทำต่อของไหล ทำให้เกิดการเคลื่อนไหวอย่างนุ่มนวล แรงยังคงเรียบ — ไม่มีการกระโดดทันที ไม่มีอนันต์",
-        "story-3-title": "ยืดเหมือนสปาเก็ตตี้",
-        "story-3-body": "กระแสน้ำวนหมุนเข้าสู่ภายในและยืดออกเหมือนสปาเก็ตตี้ มันหดตัว เร่งความเร็วขณะที่หดตัว แต่พลังงานยังคงจำกัด — ข้อจำกัดที่สำคัญจากฟิสิกส์",
-        "story-4-title": "ความเร็วระเบิด พลังงานยังจำกัด",
-        "story-4-body": "ในเวลาจำกัด ความเร็วของของไหลเติบโตโดยไม่มีขอบเขต — จุดเอกฐาน แต่พลังงานจลน์ยังคงจำกัด ตามที่กฎของฟิสิกส์กำหนด โมเดลคอนตินิวอัมพังลง",
-        "lean-title": "การพิสูจน์อย่างเป็นทางการ",
-        "lean-body": "ผลลัพธ์นี้ถูกสร้างโดยตัวแทน AI และทำให้เป็นทางการใน Lean ซึ่งเป็นผู้ช่วยพิสูจน์ที่ตรวจสอบความถูกต้องทางคณิตศาสตร์ การพิสูจน์แสดงว่าคำตอบที่เรียบของสมการ Navier–Stokes สามารถพัฒนาจุดเอกฐานได้",
+        "consequence-viscosity-low": "ความหนืดต่ำ → gradient คม",
+        "consequence-viscosity-high": "ความหนืดสูง → การไหลกระจาย",
+        "consequence-stretch-low": "ยืดน้อย → วอร์เท็กซ์กระชับ",
+        "consequence-stretch-high": "ยืดมาก → เกลียวยาว",
+        "consequence-spin-low": "หมุนช้า → เกลียวหลวม",
+        "consequence-spin-high": "หมุนเร็ว → พันแน่น",
+        "why-title": "ความก้าวหน้า",
+        "why-body": "OpenAI และผู้ร่วมงานสร้างคำตอบที่เรียบชัดเจนของ Navier–Stokes ที่พัฒนา singularity ในเวลาจำกัด ทำเป็นทางการใน Lean คำถามรางวัล Clay Millennium ยังเปิดอยู่",
         "link-lean": "Lean Formalization",
-        "link-openai": "ประกาศ OpenAI",
-        "footer": "สร้างด้วยรูปแบบจากหน้าจอ Mobbin: นั่งร้าน Brilliant, ตัวพิมพ์ Artifact, การ์ดตัวชี้วัด Stripe, ราง Linear, โครม Arc ลอยตัว, เวที Mesh 3D, สครับเบอร์วิดีโอ Noom, ไทม์ไลน์ Polarsteps"
+        "link-openai": "ประกาศ OpenAI"
     }
 };
 
@@ -129,15 +131,103 @@ let vortexState = {
     viscosity: 0.1,
     stretch: 0.5,
     spin: 0.8,
-    beatIndex: 0
+    beatIndex: 0,
+    isExploding: false,
+    explodeProgress: 0,
+    lastBeat: 0
 };
 
-// Draw cartoon vortex (spaghetti spiral)
-// Matches OpenAI official visualization:
-// - Cyan/bright teal outer strands (slow rotation)
-// - Orange/amber inner strands (fast rotation)
-// - Blue/purple mid-range transitions
-// - 3D helical tubes wrapping vertical axis with axial stretching
+// Consequence chip state
+let consequenceChip = {
+    visible: false,
+    text: '',
+    fadeTimeout: null
+};
+
+// Explode animation particles
+let explodeParticles = [];
+
+function triggerExplode() {
+    vortexState.isExploding = true;
+    vortexState.explodeProgress = 0;
+    explodeParticles = [];
+    
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const cx = w / 2;
+    const cy = h / 2;
+    
+    // Create burst particles
+    const numParticles = 60;
+    for (let i = 0; i < numParticles; i++) {
+        const angle = (i / numParticles) * Math.PI * 2;
+        const speed = 3 + Math.random() * 5;
+        const size = 2 + Math.random() * 4;
+        
+        // Color: orange to cyan gradient
+        const colorMix = i / numParticles;
+        let color;
+        if (colorMix < 0.5) {
+            color = { r: 251, g: 146, b: 60 };
+        } else {
+            color = { r: 34, g: 211, b: 238 };
+        }
+        
+        explodeParticles.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: size,
+            life: 1.0,
+            color: color
+        });
+    }
+}
+
+function updateExplode() {
+    if (!vortexState.isExploding) return;
+    
+    vortexState.explodeProgress += 0.05;
+    
+    // Update particles
+    explodeParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15;
+        p.life -= 0.025;
+        p.size *= 0.97;
+    });
+    
+    // End explode after ~1 second
+    if (vortexState.explodeProgress >= 1.0) {
+        vortexState.isExploding = false;
+        explodeParticles = [];
+    }
+}
+
+function drawExplodeParticles() {
+    if (explodeParticles.length === 0) return;
+    
+    explodeParticles.forEach(p => {
+        if (p.life <= 0) return;
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.life * 0.8})`;
+        ctx.fill();
+        
+        // Glow
+        const glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+        glowGrad.addColorStop(0, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.life * 0.3})`);
+        glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = glowGrad;
+        ctx.fillRect(p.x - p.size * 3, p.y - p.size * 3, p.size * 6, p.size * 6);
+    });
+}
+
+// Draw cartoon vortex (3D spiral with cos/sin geometry)
+// Teal/cyan outer (slow) → orange/amber inner (fast)
 function drawVortex() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -146,118 +236,106 @@ function drawVortex() {
     
     ctx.clearRect(0, 0, w, h);
     
-    // Dark background matching OpenAI image
+    // Dark background
     const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) / 2);
     bgGrad.addColorStop(0, '#0d0d12');
     bgGrad.addColorStop(1, '#050508');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
     
-    // Calculate vortex parameters based on state
+    // Check for explode trigger (beat 4 = singularity zone)
     const t = vortexState.time;
+    const currentBeat = t >= 0.9 ? 3 : (t >= 0.66 ? 2 : (t >= 0.33 ? 1 : 0));
+    if (currentBeat === 3 && vortexState.lastBeat !== 3 && !vortexState.isExploding) {
+        triggerExplode();
+    }
+    vortexState.lastBeat = currentBeat;
+    
+    // Calculate vortex parameters
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // Strong axial stretching (vertical elongation like OpenAI image)
-    const axialStretch = 1.2 + singularityFactor * 4.5 * vortexState.stretch;
-    const radialShrink = 1 - singularityFactor * 0.75;
+    // 3D spiral parameters: tightness and vertical elongation
+    const numSpirals = 5 + Math.floor(vortexState.beatIndex * 2);
+    const maxRadius = Math.min(w, h) * 0.35;
+    const tightness = 0.5 + singularityFactor * 3.0 * vortexState.stretch;
+    const elongation = 1.0 + singularityFactor * 4.5 * vortexState.stretch;
     
-    // Multiple helical strands (tube-like ribbons)
-    const numStrands = 8 + Math.floor(vortexState.beatIndex * 2);
-    const maxRadius = Math.min(w, h) * 0.32;
+    // Explode effect: burst outward
+    const explodeFactor = vortexState.isExploding ? Math.sin(vortexState.explodeProgress * Math.PI) * 2.5 : 0;
     
-    // Draw 3D helical tube strands
-    for (let strandIdx = 0; strandIdx < numStrands; strandIdx++) {
-        const strandPhase = (strandIdx / numStrands) * Math.PI * 2;
-        const helixPhase = strandIdx * 0.3; // Offset for 3D helix effect
+    // Draw multiple spiral strands (spaghetti)
+    for (let spiralIdx = 0; spiralIdx < numSpirals; spiralIdx++) {
+        const spiralOffset = (spiralIdx / numSpirals) * Math.PI * 2;
         
-        const points = [];
+        ctx.beginPath();
         
-        // Generate helical spiral points
         for (let i = 0; i <= 100; i++) {
-            const t_param = i / 100;
-            const radiusNorm = 1 - t_param; // 1 (outer) to 0 (center)
+            const param = i / 100;
+            const radiusNorm = 1 - param;
             
-            // Inward spiral with multiple turns
-            const spiralTurns = 4 + singularityFactor * 5;
-            const theta = radiusNorm * Math.PI * 2 * spiralTurns + strandPhase;
+            // Inward spiral angle
+            const angle = param * Math.PI * 6 * tightness + spiralOffset;
+            const radius = maxRadius * radiusNorm * (1 - singularityFactor * 0.6);
             
-            // Angular velocity (faster rotation near center)
-            const angularSpeed = 0.4 + (1 - radiusNorm) * 3.0 * vortexState.spin;
-            const spinAngle = theta + t * Math.PI * 2 * angularSpeed + helixPhase;
+            // Spin rotation (faster near center)
+            const spinSpeed = 0.3 + (1 - radiusNorm) * 2.0;
+            const spinAngle = angle * vortexState.spin + t * Math.PI * 2 * spinSpeed;
             
-            // Radius shrinks inward
-            const radius = maxRadius * radiusNorm * radialShrink;
+            // 3D spiral position: x = cos(spinAngle)*r, y = cy + sin(spinAngle)*r/elongation
+            let x = cx + Math.cos(spinAngle) * radius * (1 + explodeFactor * param);
+            let y = cy + Math.sin(spinAngle) * radius / elongation * (1 + explodeFactor * param);
             
-            // Vertical position (axial stretching)
-            const verticalOffset = (t_param - 0.5) * h * 0.6 / axialStretch;
-            
-            // 3D helical position
-            const x = cx + Math.cos(spinAngle) * radius;
-            const y = cy + verticalOffset;
-            
-            // Color transition: outer cyan → mid blue/purple → inner orange
-            // Based on radius (distance from center)
-            let color;
-            if (radiusNorm > 0.65) {
-                // Outer region: bright cyan/teal (slow rotation)
-                color = { r: 34, g: 211, b: 238 }; // #22d3ee bright cyan
-            } else if (radiusNorm > 0.35) {
-                // Mid region: blue/purple transition
-                const midFactor = (radiusNorm - 0.35) / 0.3;
-                const cyan = { r: 34, g: 211, b: 238 };
-                const purple = { r: 96, g: 165, b: 250 }; // #60a5fa blue
-                color = {
-                    r: purple.r + (cyan.r - purple.r) * midFactor,
-                    g: purple.g + (cyan.g - purple.g) * midFactor,
-                    b: purple.b + (cyan.b - purple.b) * midFactor
-                };
+            if (i === 0) {
+                ctx.moveTo(x, y);
             } else {
-                // Inner region: orange/amber (fast rotation)
-                const innerFactor = radiusNorm / 0.35;
-                const orange = { r: 251, g: 146, b: 60 }; // #fb923c
-                const amber = { r: 217, g: 119, b: 6 }; // #d97706
-                color = {
-                    r: amber.r + (orange.r - amber.r) * innerFactor,
-                    g: amber.g + (orange.g - amber.g) * innerFactor,
-                    b: amber.b + (orange.b - amber.b) * innerFactor
-                };
+                ctx.lineTo(x, y);
             }
-            
-            points.push({ x, y, radiusNorm, color });
         }
         
-        // Draw strand as connected tube segments
-        for (let i = 0; i < points.length - 1; i++) {
-            const p = points[i];
-            const pNext = points[i + 1];
-            
-            // Line width: thicker in outer regions, thinner near center
-            const lineWidth = 1.0 + p.radiusNorm * 2.5 + singularityFactor * 1.5;
-            
-            // Opacity: more visible outer strands
-            const opacity = 0.5 + p.radiusNorm * 0.35 + singularityFactor * 0.15;
-            
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(pNext.x, pNext.y);
-            ctx.strokeStyle = `rgba(${Math.round(p.color.r)}, ${Math.round(p.color.g)}, ${Math.round(p.color.b)}, ${opacity})`;
-            ctx.lineWidth = lineWidth;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
+        // Color gradient: outer cyan/teal → inner orange/amber
+        const outerMix = spiralIdx / numSpirals;
+        let color;
+        if (outerMix < 0.4) {
+            color = { r: 251, g: 146, b: 60 };
+        } else if (outerMix < 0.7) {
+            const mix = (outerMix - 0.4) / 0.3;
+            color = {
+                r: 251 - mix * (251 - 34),
+                g: 146 + mix * (211 - 146),
+                b: 60 + mix * (238 - 60)
+            };
+        } else {
+            color = { r: 34, g: 211, b: 238 };
         }
+        
+        const opacity = 0.3 + singularityFactor * 0.4 + (vortexState.isExploding ? 0.3 : 0);
+        const lineWidth = 2 + singularityFactor * 3 + (vortexState.isExploding ? 2 : 0);
+        
+        ctx.strokeStyle = `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${opacity})`;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
     }
     
-    // Central concentration glow (orange singularity)
-    if (singularityFactor > 0.35) {
-        const glowRadius = 10 * (1 - singularityFactor * 0.4) + 5;
+    // Central singularity glow
+    if (singularityFactor > 0.3) {
+        const glowRadius = 15 * (1 - singularityFactor * 0.5) + 5 + (vortexState.isExploding ? 20 : 0);
         const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
         glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.9})`);
-        glowGrad.addColorStop(0.6, `rgba(217, 119, 6, ${singularityFactor * 0.4})`);
-        glowGrad.addColorStop(1, 'rgba(217, 119, 6, 0)');
+        glowGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
         ctx.fillStyle = glowGrad;
         ctx.fillRect(cx - glowRadius, cy - glowRadius, glowRadius * 2, glowRadius * 2);
+    }
+    
+    // Draw explode particles on top
+    drawExplodeParticles();
+    updateExplode();
+    
+    // Keep animating during explode
+    if (vortexState.isExploding) {
+        requestAnimationFrame(drawVortex);
     }
 }
 
@@ -282,19 +360,37 @@ function updateBeatIndicator() {
         }
     }
     
+    const previousBeat = vortexState.beatIndex;
     vortexState.beatIndex = beatIndex;
     
-    const beatNumber = document.querySelector('.beat-number');
-    const beatLabel = document.querySelector('.beat-label');
+    // Update beat card with animation
+    const beatCard = document.querySelector('.beat-card');
+    const beatNumber = document.querySelector('.beat-card-number');
+    const beatTitle = document.querySelector('.beat-card-title');
+    const beatDesc = document.querySelector('.beat-card-desc');
     
-    beatNumber.textContent = `${beatIndex + 1}/4`;
-    beatLabel.setAttribute('data-i18n', beats[beatIndex].label);
-    beatLabel.textContent = translations[currentLang][beats[beatIndex].label];
-    
-    // Highlight active story card
-    document.querySelectorAll('.story-card').forEach((card, idx) => {
-        card.classList.toggle('active', idx === beatIndex);
-    });
+    if (beatNumber && beatTitle && beatDesc) {
+        // Trigger fade animation on beat change
+        if (previousBeat !== beatIndex && beatCard) {
+            beatCard.classList.add('beat-transition');
+            setTimeout(() => beatCard.classList.remove('beat-transition'), 400);
+        }
+        
+        beatNumber.textContent = `${beatIndex + 1}/4`;
+        
+        const titleKey = `beat-${beatIndex + 1}`;
+        const descKey = `beat-${beatIndex + 1}-desc`;
+        
+        beatTitle.setAttribute('data-i18n', titleKey);
+        beatTitle.textContent = translations[currentLang][titleKey];
+        
+        beatDesc.setAttribute('data-i18n', descKey);
+        beatDesc.textContent = translations[currentLang][descKey];
+        
+        // Color coding by beat
+        const colors = ['#6366f1', '#8b5cf6', '#22d3ee', '#fb923c'];
+        beatCard.style.borderLeftColor = colors[beatIndex];
+    }
 }
 
 // ============================================================================
@@ -306,8 +402,9 @@ function updateMetrics() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // Speed grows unbounded towards singularity
-    const speed = 0.1 + singularityFactor * 50 * (1 + Math.pow(progress, 5) * 200);
+    // Speed grows unbounded towards singularity (dramatic scaling)
+    const baseSpeed = 0.1 + singularityFactor * 50 * (1 + Math.pow(progress, 5) * 200);
+    const speed = baseSpeed * (1 + vortexState.spin * 0.5) * (1 - vortexState.viscosity * 0.3);
     
     // Energy stays finite (key constraint!)
     const energy = 1.0 + Math.log(1 + singularityFactor * 5) * 0.5;
@@ -315,9 +412,54 @@ function updateMetrics() {
     // Force is smooth throughout
     const force = Math.sin(t * Math.PI) * 5 * (1 + vortexState.viscosity);
     
-    document.getElementById('metricSpeed').textContent = speed.toFixed(1);
-    document.getElementById('metricEnergy').textContent = energy.toFixed(1);
-    document.getElementById('metricForce').textContent = Math.abs(force).toFixed(1);
+    // Format with dramatic highlighting at singularity
+    const speedEl = document.getElementById('metricSpeed');
+    const energyEl = document.getElementById('metricEnergy');
+    const forceEl = document.getElementById('metricForce');
+    
+    if (speed > 100) {
+        speedEl.textContent = speed > 1000 ? '∞' : speed.toFixed(0);
+        speedEl.style.color = '#fb923c';
+    } else {
+        speedEl.textContent = speed.toFixed(1);
+        speedEl.style.color = '';
+    }
+    
+    energyEl.textContent = energy.toFixed(2);
+    forceEl.textContent = Math.abs(force).toFixed(1);
+    
+    // Pulse animation at blow-up
+    if (vortexState.beatIndex === 3) {
+        speedEl.style.animation = 'pulse 1s ease-in-out infinite';
+    } else {
+        speedEl.style.animation = '';
+    }
+}
+
+function showConsequence(key) {
+    const chipEl = document.getElementById('consequenceChip');
+    if (!chipEl) return;
+    
+    let textKey = '';
+    const value = vortexState[key];
+    
+    if (key === 'viscosity') {
+        textKey = value < 0.5 ? 'consequence-viscosity-low' : 'consequence-viscosity-high';
+    } else if (key === 'stretch') {
+        textKey = value < 0.5 ? 'consequence-stretch-low' : 'consequence-stretch-high';
+    } else if (key === 'spin') {
+        textKey = value < 0.5 ? 'consequence-spin-low' : 'consequence-spin-high';
+    }
+    
+    if (textKey) {
+        chipEl.textContent = translations[currentLang][textKey];
+        chipEl.classList.add('visible');
+        
+        clearTimeout(consequenceChip.fadeTimeout);
+        consequenceChip.fadeTimeout = setTimeout(() => {
+            chipEl.classList.remove('visible');
+        }, 2000);
+    }
 }
 
 // ============================================================================
@@ -485,6 +627,8 @@ Object.keys(sliders).forEach(key => {
         if (key === 'time') {
             updateScrubberPosition();
             updateBeatIndicator();
+        } else {
+            showConsequence(key);
         }
         
         updateMetrics();

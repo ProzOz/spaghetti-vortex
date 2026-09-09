@@ -12,24 +12,25 @@
 }
 
 :root {
-    /* Dark theme colors inspired by Arc/Linear */
-    --bg-primary: #0a0a0b;
-    --bg-secondary: #17171a;
-    --bg-card: #1f1f23;
-    --bg-card-hover: #26262b;
+    /* Cinematic dark research lab theme */
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0f;
+    --bg-card: #0f0f15;
+    --bg-card-hover: #15151d;
     
     --text-primary: #ffffff;
-    --text-secondary: #a0a0aa;
-    --text-tertiary: #6b6b75;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
     
     --accent-primary: #6366f1;
     --accent-secondary: #8b5cf6;
-    --accent-success: #10b981;
+    --accent-cyan: #22d3ee;
+    --accent-orange: #fb923c;
     --accent-warning: #f59e0b;
-    --accent-danger: #ef4444;
     
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-medium: rgba(255, 255, 255, 0.12);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-medium: rgba(255, 255, 255, 0.1);
+    --border-glow: rgba(99, 102, 241, 0.3);
     
     /* Spacing system */
     --space-xs: 8px;
@@ -39,17 +40,18 @@
     --space-xl: 32px;
     --space-2xl: 48px;
     
-    /* Border radius (Arc-inspired rounded corners) */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    /* Border radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
     --radius-pill: 999px;
     
-    /* Shadows (soft, floating chrome) */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    /* Shadows (sharp, dramatic) */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.7);
+    --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
 }
 
 body {
@@ -109,16 +111,17 @@ body {
 
 /* Honesty Banner */
 .honesty-banner {
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    color: var(--accent-warning);
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--text-secondary);
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-md);
-    font-size: 13px;
+    font-size: 12px;
     margin-bottom: var(--space-lg);
     display: flex;
     align-items: center;
     line-height: 1.5;
+    font-weight: 500;
 }
 
 /* Stage Card (Brilliant lesson + Mesh 3D card inspired) */
@@ -142,16 +145,21 @@ body {
 }
 
 .stage-header h1 {
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 800;
     margin-bottom: var(--space-xs);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #ffffff 0%, #9ca3af 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .stage-subtitle {
     color: var(--text-secondary);
     font-size: 15px;
     font-weight: 500;
+    letter-spacing: -0.01em;
 }
 
 #vortexCanvas {
@@ -173,31 +181,53 @@ body {
     cursor: grabbing;
 }
 
-/* Beat Indicator (Brilliant step label) */
-.beat-indicator {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-top: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
+/* Beat Card (animated visual description) */
+.beat-card {
+    margin-top: var(--space-lg);
+    padding: var(--space-lg);
     background: var(--bg-secondary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--accent-primary);
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.beat-number {
-    font-weight: 700;
-    font-size: 13px;
+.beat-card.beat-transition {
+    opacity: 0.3;
+    transform: translateY(4px);
+}
+
+.beat-card-number {
+    font-weight: 800;
+    font-size: 14px;
     color: var(--accent-primary);
-    background: rgba(99, 102, 241, 0.15);
-    padding: 4px 10px;
+    background: rgba(99, 102, 241, 0.12);
+    padding: 6px 12px;
     border-radius: var(--radius-pill);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
 }
 
-.beat-label {
-    font-size: 15px;
-    font-weight: 600;
+.beat-card-content {
+    flex: 1;
+}
+
+.beat-card-title {
+    font-size: 17px;
+    font-weight: 700;
     color: var(--text-primary);
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+}
+
+.beat-card-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 400;
 }
 
 /* Scrubber Card (Noom + Polarsteps timeline) */
@@ -329,11 +359,17 @@ body {
 
 .metric-value {
     font-size: 32px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-primary);
     margin-bottom: 4px;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+    transition: all 0.3s ease;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
 }
 
 .metric-unit {
@@ -356,13 +392,39 @@ body {
     -ms-user-select: none;
 }
 
+.controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    gap: var(--space-md);
+}
+
 .controls-title {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    margin-bottom: var(--space-md);
+}
+
+.consequence-chip {
+    font-size: 12px;
+    color: var(--accent-cyan);
+    background: rgba(34, 211, 238, 0.1);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.consequence-chip.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .slider-group {
@@ -449,69 +511,30 @@ body {
     transform: scale(1.05);
 }
 
-/* Story Cards (Artifact reader typography) */
-.story-section {
-    margin-bottom: var(--space-xl);
-}
-
-.story-card {
+/* Why Section */
+.why-section {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
     padding: var(--space-lg);
-    margin-bottom: var(--space-md);
-    transition: all 0.3s ease;
-    opacity: 0.4;
+    margin-bottom: var(--space-xl);
 }
 
-.story-card.active {
-    opacity: 1;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 1px var(--accent-primary), var(--shadow-md);
-}
-
-.story-number {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-sm);
-    letter-spacing: 0.1em;
-}
-
-.story-card h2 {
-    font-size: 20px;
-    font-weight: 700;
+.why-section h3 {
+    font-size: 18px;
+    font-weight: 800;
     margin-bottom: var(--space-sm);
     letter-spacing: -0.01em;
+    color: var(--text-primary);
 }
 
-.story-card p {
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--text-secondary);
-}
-
-/* Lean Section */
-.lean-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
-    margin-bottom: var(--space-xl);
-}
-
-.lean-section h3 {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: var(--space-sm);
-}
-
-.lean-section p {
+.why-section p {
     font-size: 15px;
     line-height: 1.7;
     color: var(--text-secondary);
     margin-bottom: var(--space-md);
 }
+
 
 .links-row {
     display: flex;
@@ -544,10 +567,14 @@ body {
 .footer {
     text-align: center;
     color: var(--text-tertiary);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.6;
     padding-top: var(--space-xl);
     border-top: 1px solid var(--border-subtle);
+}
+
+.footer p {
+    margin: 0;
 }
 
 /* Responsive adjustments */
@@ -559,7 +586,7 @@ body {
     }
     
     .stage-header h1 {
-        font-size: 36px;
+        font-size: 42px;
     }
     
     .stage-subtitle {
@@ -574,10 +601,12 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
     
-    .story-section {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-md);
+    .beat-card-title {
+        font-size: 19px;
+    }
+    
+    .beat-card-desc {
+        font-size: 15px;
     }
 }
 
@@ -614,7 +643,6 @@ body {
 .scrubber-card,
 .metrics-row,
 .controls-card,
-.story-section,
-.lean-section {
-    animation: fadeIn 0.5s ease-out;
+.why-section {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }

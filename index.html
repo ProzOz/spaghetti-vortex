@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spaghetti Vortex — Navier–Stokes Singularity Explainer</title>
+    <title>Singularity in a Glass of Water — Navier–Stokes Blow-up Visualization</title>
     
     <!-- Open Graph tags -->
-    <meta property="og:title" content="Spaghetti Vortex — Navier–Stokes Singularity Explainer">
-    <meta property="og:description" content="An interactive cartoon tour of how smooth fluids can develop singularities. Drag the vortex through four story beats.">
+    <meta property="og:title" content="Singularity in a Glass of Water">
+    <meta property="og:description" content="Interactive visualization of OpenAI's Navier–Stokes finite-time singularity construction.">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://repository-images.githubusercontent.com/your-preview-image.png">
     
-    <meta name="description" content="Phone-ready interactive explainer: drag a cartoon spaghetti vortex through the Navier–Stokes singularity story. Teaching toy, not a solver.">
+    <meta name="description" content="Explore OpenAI's construction of smooth fluid solutions that develop singularities in finite time. Interactive demo, formalized in Lean.">
     
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -31,23 +30,26 @@
                 <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
                 <path d="M8 4v5M8 11v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span data-i18n="honesty">Teaching cartoon. Not a numerical solver. Not claiming the Millennium Prize.</span>
+            <span data-i18n="honesty">Interactive visualization of OpenAI's Navier–Stokes singularity construction. Not a numerical solver.</span>
         </div>
 
         <!-- Hero Stage (Brilliant lesson + Mesh card inspired) -->
         <div class="stage-card">
             <div class="stage-header">
-                <h1 data-i18n="title">The Spaghetti Vortex</h1>
-                <p class="stage-subtitle" data-i18n="subtitle">How a smooth fluid can blow up</p>
+                <h1 data-i18n="title">Singularity in a Glass of Water</h1>
+                <p class="stage-subtitle" data-i18n="subtitle">Exploring OpenAI's construction of finite-time blow-up</p>
             </div>
             
             <!-- Vortex Canvas -->
             <canvas id="vortexCanvas" width="800" height="600"></canvas>
             
-            <!-- Beat Indicator (Brilliant-style step label) -->
-            <div class="beat-indicator">
-                <span class="beat-number">1/4</span>
-                <span class="beat-label" data-i18n="beat-1">Fluid at rest</span>
+            <!-- Beat Card (animated visual description) -->
+            <div class="beat-card">
+                <div class="beat-card-number">1/4</div>
+                <div class="beat-card-content">
+                    <div class="beat-card-title" data-i18n="beat-1">Quiescent State</div>
+                    <div class="beat-card-desc" data-i18n="beat-1-desc">Zero velocity field. Perfectly still.</div>
+                </div>
             </div>
         </div>
 
@@ -70,8 +72,8 @@
             <div class="beat-labels">
                 <span data-i18n="beat-1-short">Rest</span>
                 <span data-i18n="beat-2-short">Force</span>
-                <span data-i18n="beat-3-short">Stretch</span>
-                <span data-i18n="beat-4-short">Singularity</span>
+                <span data-i18n="beat-3-short">Spiral</span>
+                <span data-i18n="beat-4-short">Blow-up</span>
             </div>
         </div>
 
@@ -80,7 +82,7 @@
             <div class="metric-card">
                 <div class="metric-header">
                     <span class="metric-icon">⚡</span>
-                    <span class="metric-label" data-i18n="metric-speed">Speed</span>
+                    <span class="metric-label" data-i18n="metric-speed">Velocity</span>
                 </div>
                 <div class="metric-value" id="metricSpeed">0.0</div>
                 <div class="metric-unit">m/s</div>
@@ -91,8 +93,8 @@
                     <span class="metric-icon">⚛️</span>
                     <span class="metric-label" data-i18n="metric-energy">Energy</span>
                 </div>
-                <div class="metric-value" id="metricEnergy">1.0</div>
-                <div class="metric-unit">J (finite)</div>
+                <div class="metric-value" id="metricEnergy">1.00</div>
+                <div class="metric-unit">finite</div>
             </div>
             
             <div class="metric-card">
@@ -101,13 +103,16 @@
                     <span class="metric-label" data-i18n="metric-force">Force</span>
                 </div>
                 <div class="metric-value" id="metricForce">0.0</div>
-                <div class="metric-unit">N</div>
+                <div class="metric-unit">smooth</div>
             </div>
         </div>
 
         <!-- Parameter Sliders (Linear properties rail inspired) -->
         <div class="controls-card">
-            <h3 class="controls-title" data-i18n="controls-title">Parameters</h3>
+            <div class="controls-header">
+                <h3 class="controls-title" data-i18n="controls-title">Parameters</h3>
+                <div class="consequence-chip" id="consequenceChip"></div>
+            </div>
             
             <div class="slider-group">
                 <div class="slider-header">
@@ -135,44 +140,17 @@
             
             <div class="slider-group">
                 <div class="slider-header">
-                    <label data-i18n="param-spin">Spin</label>
+                    <label data-i18n="param-spin">Rotation</label>
                     <span class="slider-value" id="valueSpin">0.80</span>
                 </div>
                 <input type="range" class="slider" id="sliderSpin" min="0" max="1" step="0.01" value="0.8">
             </div>
         </div>
 
-        <!-- Story Beats Detail Cards (Artifact reader typography inspired) -->
-        <div class="story-section">
-            <div class="story-card" id="storyCard1">
-                <div class="story-number">01</div>
-                <h2 data-i18n="story-1-title">Fluid at Rest</h2>
-                <p data-i18n="story-1-body">Our fluid begins perfectly still, with zero velocity everywhere. Think of a calm, motionless pool of water before anything disturbs it.</p>
-            </div>
-            
-            <div class="story-card" id="storyCard2">
-                <div class="story-number">02</div>
-                <h2 data-i18n="story-2-title">Smooth Force Applied</h2>
-                <p data-i18n="story-2-body">A smooth external force begins to act on the fluid, setting it into gentle motion. The force stays smooth — no sudden spikes, no infinities.</p>
-            </div>
-            
-            <div class="story-card" id="storyCard3">
-                <div class="story-number">03</div>
-                <h2 data-i18n="story-3-title">Spaghetti Stretch</h2>
-                <p data-i18n="story-3-body">The vortex spirals inward and elongates like spaghetti. It concentrates, speeding up as it shrinks, but the energy remains finite — the key constraint from physics.</p>
-            </div>
-            
-            <div class="story-card" id="storyCard4">
-                <div class="story-number">04</div>
-                <h2 data-i18n="story-4-title">Speed Explodes, Energy Stays Finite</h2>
-                <p data-i18n="story-4-body">In finite time, the fluid velocity grows without bound — a singularity. Yet kinetic energy remains finite, as the laws of physics demand. The continuum model breaks down.</p>
-            </div>
-        </div>
-
-        <!-- Lean Formalization Section -->
-        <div class="lean-section">
-            <h3 data-i18n="lean-title">Formalized Proof</h3>
-            <p data-i18n="lean-body">This result was produced by AI agents and formalized in Lean, a proof assistant that verifies mathematical correctness. The proof shows that smooth solutions to the Navier–Stokes equations can develop singularities.</p>
+        <!-- Why This Matters -->
+        <div class="why-section">
+            <h3 data-i18n="why-title">The Breakthrough</h3>
+            <p data-i18n="why-body">OpenAI and collaborators constructed explicit smooth solutions to Navier–Stokes that develop singularities in finite time, formalized in Lean. The Clay Millennium Prize question remains open.</p>
             <div class="links-row">
                 <a href="https://github.com/openai/NavierStokesAndEuler" target="_blank" rel="noopener" class="link-btn">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px;">
@@ -191,12 +169,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p data-i18n="footer">
-                Built with patterns from Mobbin screens: Brilliant lesson scaffolding, Artifact reader typography, Stripe metric cards, Linear property rails, Arc floating chrome, Mesh 3D hero stage, Noom video scrubber, Polarsteps filmstrip timeline.
-            </p>
-            <p style="margin-top: 12px; opacity: 0.5; font-size: 13px;">
-                © 2026 • <a href="https://github.com/ProzOz/spaghetti-vortex" style="color: inherit; text-decoration: underline;">spaghetti-vortex</a>
-            </p>
+            <p>© 2026 • <a href="https://github.com/ProzOz/spaghetti-vortex" style="color: inherit; text-decoration: underline;">spaghetti-vortex</a></p>
         </footer>
 
     </div>
