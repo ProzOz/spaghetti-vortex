@@ -226,6 +226,22 @@ function drawExplodeParticles() {
     });
 }
 
+// Simple deterministic hash for stable filament parameters
+function hash(n) {
+    n = (n ^ 61) ^ (n >>> 16);
+    n = n + (n << 3);
+    n = n ^ (n >>> 4);
+    n = n * 0x27d4eb2d;
+    n = n ^ (n >>> 15);
+    return n >>> 0;
+}
+
+// Deterministic random [0, 1) from seed
+function seededRandom(seed) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
 // Draw dense 3D filament vortex matching OpenAI Navier-Stokes visualization
 // Key features: inward spiral + axial stretching, depth-sorted thin tubes
 function drawVortex() {
@@ -280,24 +296,31 @@ function drawVortex() {
             width: 0
         };
         
+        // Deterministic parameters from filament index
+        const seed = hash(fIdx);
+        const rand1 = seededRandom(seed);
+        const rand2 = seededRandom(seed + 1);
+        const rand3 = seededRandom(seed + 2);
+        const rand4 = seededRandom(seed + 3);
+        
         // Each filament starts at a different angular position
         const baseAngle = (fIdx / numFilaments) * Math.PI * 2;
         
         // Wider radial variation: some start from core, some from far out
-        const radialStart = 0.3 + Math.random() * 0.7;
+        const radialStart = 0.3 + rand1 * 0.7;
         
         // Some filaments are "wild" - they splay out at edges
-        const isWildFilament = Math.random() < 0.3;
-        const wildnessFactor = isWildFilament ? 1.5 + Math.random() * 1.0 : 1.0;
+        const isWildFilament = rand2 < 0.3;
+        const wildnessFactor = isWildFilament ? 1.5 + rand3 * 1.0 : 1.0;
         
-        // Random phase offset for helix variation
-        const phaseOffset = Math.random() * Math.PI * 2;
+        // Phase offset for helix variation
+        const phaseOffset = rand4 * Math.PI * 2;
         
         // Vary spiral direction slightly for more chaos
-        const spiralVariation = 0.8 + Math.random() * 0.4;
+        const spiralVariation = 0.8 + seededRandom(seed + 4) * 0.4;
         
         // Sample points along the filament (outer → center)
-        const numPoints = 35 + Math.floor(Math.random() * 15);
+        const numPoints = 35 + Math.floor(seededRandom(seed + 5) * 15);
         for (let i = 0; i < numPoints; i++) {
             const param = i / (numPoints - 1);
             
@@ -311,8 +334,8 @@ function drawVortex() {
                 radius *= edgeSplay;
             }
             
-            // Add turbulent noise to radius for organic feel
-            const turbulence = (Math.random() - 0.5) * 0.15 * radius;
+            // Add deterministic turbulent noise to radius for organic feel
+            const turbulence = (seededRandom(seed + 100 + i) - 0.5) * 0.15 * radius;
             radius += turbulence;
             
             // Helical angle: spirals inward with multiple turns + variation
@@ -331,7 +354,7 @@ function drawVortex() {
             
             // Add stronger sinusoidal wobble + noise for filament character
             const wobble = Math.sin(param * Math.PI * 5 + phaseOffset) * radius * 0.12;
-            const noiseY = (Math.random() - 0.5) * radius * 0.08;
+            const noiseY = (seededRandom(seed + 200 + i) - 0.5) * radius * 0.08;
             const y3d = yBase + wobble + noiseY;
             
             // Project to 2D with perspective depth
@@ -350,9 +373,20 @@ function drawVortex() {
             }
         }
         
-        // Color based on radial position (core = orange, outer = cyan)
+        // Color based on local radius (average of mid-section) for richer variation
+        // Sample a few points in middle section to get representative radius
+        let avgRadiusNorm = 0;
+        const sampleStart = Math.floor(numPoints * 0.3);
+        const sampleEnd = Math.floor(numPoints * 0.7);
+        let sampleCount = 0;
+        for (let i = sampleStart; i < sampleEnd && i < filament.points.length; i++) {
+            const param = i / (numPoints - 1);
+            avgRadiusNorm += (1 - param) * radialStart;
+            sampleCount++;
+        }
+        const coreDistance = sampleCount > 0 ? avgRadiusNorm / sampleCount : radialStart;
+        
         // More orange in the core to match reference
-        const coreDistance = radialStart;
         if (coreDistance < 0.45) {
             // Inner core: orange/copper dominant
             const coreMix = coreDistance / 0.45;
@@ -379,14 +413,14 @@ function drawVortex() {
             };
         }
         
-        // Thin filaments, more variation in thickness
-        filament.width = 0.6 + Math.random() * 0.8 + singularityFactor * 0.5;
+        // Thin filaments, more variation in thickness (deterministic)
+        filament.width = 0.6 + seededRandom(seed + 6) * 0.8 + singularityFactor * 0.5;
         if (isWildFilament) {
             filament.width *= 0.7;
         }
         
-        // Opacity variation for depth effect
-        const opacityBase = 0.2 + Math.random() * 0.2 + singularityFactor * 0.35;
+        // Opacity variation for depth effect (deterministic)
+        const opacityBase = 0.2 + seededRandom(seed + 7) * 0.2 + singularityFactor * 0.35;
         filament.opacity = opacityBase + (vortexState.isExploding ? 0.25 : 0);
         
         filaments.push(filament);
@@ -403,11 +437,20 @@ function drawVortex() {
             width: 0
         };
         
-        const angle = (tIdx / numTendrils) * Math.PI * 2 + Math.random() * 0.5;
-        const startRadius = maxRadius * (0.6 + Math.random() * 0.3);
-        const endRadius = maxRadius * (1.2 + Math.random() * 0.5);
+        // Deterministic tendril parameters
+        const tseed = hash(1000 + tIdx);
+        const trand1 = seededRandom(tseed);
+        const trand2 = seededRandom(tseed + 1);
+        const trand3 = seededRandom(tseed + 2);
+        const trand4 = seededRandom(tseed + 3);
+        const trand5 = seededRandom(tseed + 4);
+        const trand6 = seededRandom(tseed + 5);
         
-        const numPoints = 10 + Math.floor(Math.random() * 8);
+        const angle = (tIdx / numTendrils) * Math.PI * 2 + trand1 * 0.5;
+        const startRadius = maxRadius * (0.6 + trand2 * 0.3);
+        const endRadius = maxRadius * (1.2 + trand3 * 0.5);
+        
+        const numPoints = 10 + Math.floor(trand4 * 8);
         for (let i = 0; i < numPoints; i++) {
             const param = i / (numPoints - 1);
             const radius = startRadius + (endRadius - startRadius) * Math.pow(param, 1.5);
@@ -435,14 +478,14 @@ function drawVortex() {
             }
         }
         
-        // Tendrils are cyan with transparency
+        // Tendrils are cyan with transparency (deterministic)
         tendril.color = {
-            r: 34 + Math.random() * 40,
+            r: 34 + trand5 * 40,
             g: 211,
             b: 238
         };
-        tendril.width = 0.4 + Math.random() * 0.4;
-        tendril.opacity = 0.1 + Math.random() * 0.15 + singularityFactor * 0.2;
+        tendril.width = 0.4 + trand6 * 0.4;
+        tendril.opacity = 0.1 + seededRandom(tseed + 6) * 0.15 + singularityFactor * 0.2;
         
         filaments.push(tendril);
     }
