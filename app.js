@@ -324,7 +324,7 @@ function drawVortex() {
             
             // 3D helical position: base spiral + tube bundle offset
             const spiralX = Math.cos(spinAngle) * baseRadius;
-            const spiralY = Math.sin(spiralAngle) * baseRadius / verticalStretch;
+            const spiralY = Math.sin(spinAngle) * baseRadius / verticalStretch;
             
             const tubeOffsetX = Math.cos(tubeOffsetAngle) * tubeRadius;
             const tubeOffsetY = Math.sin(tubeOffsetAngle) * tubeRadius / verticalStretch;
