@@ -133,8 +133,11 @@ let vortexState = {
 };
 
 // Draw cartoon vortex (spaghetti spiral)
-// OpenAI visualization vibe: orange = faster rotation, teal = slower
-// Inward spiraling + axial stretching (spaghetti elongating toward singularity)
+// Matches OpenAI official visualization:
+// - Cyan/bright teal outer strands (slow rotation)
+// - Orange/amber inner strands (fast rotation)
+// - Blue/purple mid-range transitions
+// - 3D helical tubes wrapping vertical axis with axial stretching
 function drawVortex() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
@@ -143,9 +146,9 @@ function drawVortex() {
     
     ctx.clearRect(0, 0, w, h);
     
-    // Dark background (OpenAI snapshot vibe)
+    // Dark background matching OpenAI image
     const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) / 2);
-    bgGrad.addColorStop(0, '#0a0a0f');
+    bgGrad.addColorStop(0, '#0d0d12');
     bgGrad.addColorStop(1, '#050508');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
@@ -155,77 +158,104 @@ function drawVortex() {
     const progress = Math.min(t * 1.5, 1.0);
     const singularityFactor = Math.pow(progress, 3);
     
-    // Spaghetti elongation: vortex stretches axially as it concentrates
-    const axialStretch = 1.0 + singularityFactor * 3.5 * vortexState.stretch;
-    const radialShrink = 1 - singularityFactor * 0.8;
+    // Strong axial stretching (vertical elongation like OpenAI image)
+    const axialStretch = 1.2 + singularityFactor * 4.5 * vortexState.stretch;
+    const radialShrink = 1 - singularityFactor * 0.75;
     
-    // More strands as we approach singularity
-    const numStrands = 4 + Math.floor(vortexState.beatIndex * 1.5);
-    const maxRadius = Math.min(w, h) * 0.38;
+    // Multiple helical strands (tube-like ribbons)
+    const numStrands = 8 + Math.floor(vortexState.beatIndex * 2);
+    const maxRadius = Math.min(w, h) * 0.32;
     
-    // Draw ribbon/tube strands with orange (fast) / teal (slow) coloring
+    // Draw 3D helical tube strands
     for (let strandIdx = 0; strandIdx < numStrands; strandIdx++) {
         const strandPhase = (strandIdx / numStrands) * Math.PI * 2;
+        const helixPhase = strandIdx * 0.3; // Offset for 3D helix effect
         
-        // Each strand is a series of connected tube segments
-        const segments = [];
+        const points = [];
         
-        for (let i = 0; i <= 80; i++) {
-            const radiusNorm = 1 - i / 80; // 1 (outer) to 0 (center)
+        // Generate helical spiral points
+        for (let i = 0; i <= 100; i++) {
+            const t_param = i / 100;
+            const radiusNorm = 1 - t_param; // 1 (outer) to 0 (center)
             
-            // Inward spiral trajectory
-            const spiralTurns = 3 + singularityFactor * 4;
-            const angle = radiusNorm * Math.PI * 2 * spiralTurns + strandPhase;
+            // Inward spiral with multiple turns
+            const spiralTurns = 4 + singularityFactor * 5;
+            const theta = radiusNorm * Math.PI * 2 * spiralTurns + strandPhase;
             
-            // Angular velocity increases inward (faster rotation near center)
-            const angularSpeed = 0.3 + (1 - radiusNorm) * 2.5 * vortexState.spin;
-            const spinPhase = angle + t * Math.PI * 2 * angularSpeed;
+            // Angular velocity (faster rotation near center)
+            const angularSpeed = 0.4 + (1 - radiusNorm) * 3.0 * vortexState.spin;
+            const spinAngle = theta + t * Math.PI * 2 * angularSpeed + helixPhase;
             
-            // Radius shrinks inward, concentrates near singularity
+            // Radius shrinks inward
             const radius = maxRadius * radiusNorm * radialShrink;
             
-            // Axial stretching (spaghetti elongation)
-            const x = cx + Math.cos(spinPhase) * radius;
-            const y = cy + Math.sin(spinPhase) * radius / axialStretch;
+            // Vertical position (axial stretching)
+            const verticalOffset = (t_param - 0.5) * h * 0.6 / axialStretch;
             
-            segments.push({ x, y, radiusNorm, angularSpeed });
+            // 3D helical position
+            const x = cx + Math.cos(spinAngle) * radius;
+            const y = cy + verticalOffset;
+            
+            // Color transition: outer cyan → mid blue/purple → inner orange
+            // Based on radius (distance from center)
+            let color;
+            if (radiusNorm > 0.65) {
+                // Outer region: bright cyan/teal (slow rotation)
+                color = { r: 34, g: 211, b: 238 }; // #22d3ee bright cyan
+            } else if (radiusNorm > 0.35) {
+                // Mid region: blue/purple transition
+                const midFactor = (radiusNorm - 0.35) / 0.3;
+                const cyan = { r: 34, g: 211, b: 238 };
+                const purple = { r: 96, g: 165, b: 250 }; // #60a5fa blue
+                color = {
+                    r: purple.r + (cyan.r - purple.r) * midFactor,
+                    g: purple.g + (cyan.g - purple.g) * midFactor,
+                    b: purple.b + (cyan.b - purple.b) * midFactor
+                };
+            } else {
+                // Inner region: orange/amber (fast rotation)
+                const innerFactor = radiusNorm / 0.35;
+                const orange = { r: 251, g: 146, b: 60 }; // #fb923c
+                const amber = { r: 217, g: 119, b: 6 }; // #d97706
+                color = {
+                    r: amber.r + (orange.r - amber.r) * innerFactor,
+                    g: amber.g + (orange.g - amber.g) * innerFactor,
+                    b: amber.b + (orange.b - amber.b) * innerFactor
+                };
+            }
+            
+            points.push({ x, y, radiusNorm, color });
         }
         
-        // Draw strand as gradient-colored path
-        // Orange = faster angular rotation (inner), Teal = slower (outer)
-        for (let i = 0; i < segments.length - 1; i++) {
-            const seg = segments[i];
-            const nextSeg = segments[i + 1];
+        // Draw strand as connected tube segments
+        for (let i = 0; i < points.length - 1; i++) {
+            const p = points[i];
+            const pNext = points[i + 1];
             
-            // Color based on angular speed: orange (fast) to teal (slow)
-            const speedFactor = (seg.angularSpeed - 0.3) / 2.5;
-            const orange = { r: 251, g: 146, b: 60 };  // #fb923c
-            const teal = { r: 45, g: 212, b: 191 };    // #2dd4bf
+            // Line width: thicker in outer regions, thinner near center
+            const lineWidth = 1.0 + p.radiusNorm * 2.5 + singularityFactor * 1.5;
             
-            const r = Math.round(teal.r + (orange.r - teal.r) * speedFactor);
-            const g = Math.round(teal.g + (orange.g - teal.g) * speedFactor);
-            const b = Math.round(teal.b + (orange.b - teal.b) * speedFactor);
-            
-            const opacity = 0.4 + singularityFactor * 0.3 + seg.radiusNorm * 0.2;
-            const lineWidth = 1.5 + singularityFactor * 3 + (1 - seg.radiusNorm) * 2;
+            // Opacity: more visible outer strands
+            const opacity = 0.5 + p.radiusNorm * 0.35 + singularityFactor * 0.15;
             
             ctx.beginPath();
-            ctx.moveTo(seg.x, seg.y);
-            ctx.lineTo(nextSeg.x, nextSeg.y);
-            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(pNext.x, pNext.y);
+            ctx.strokeStyle = `rgba(${Math.round(p.color.r)}, ${Math.round(p.color.g)}, ${Math.round(p.color.b)}, ${opacity})`;
             ctx.lineWidth = lineWidth;
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.stroke();
         }
     }
     
-    // Central concentration glow (singularity region)
-    if (singularityFactor > 0.4) {
-        const glowRadius = 12 * (1 - singularityFactor * 0.5) + 4;
+    // Central concentration glow (orange singularity)
+    if (singularityFactor > 0.35) {
+        const glowRadius = 10 * (1 - singularityFactor * 0.4) + 5;
         const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
-        glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.8})`);
-        glowGrad.addColorStop(0.5, `rgba(251, 146, 60, ${singularityFactor * 0.3})`);
-        glowGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
+        glowGrad.addColorStop(0, `rgba(251, 146, 60, ${singularityFactor * 0.9})`);
+        glowGrad.addColorStop(0.6, `rgba(217, 119, 6, ${singularityFactor * 0.4})`);
+        glowGrad.addColorStop(1, 'rgba(217, 119, 6, 0)');
         ctx.fillStyle = glowGrad;
         ctx.fillRect(cx - glowRadius, cy - glowRadius, glowRadius * 2, glowRadius * 2);
     }
