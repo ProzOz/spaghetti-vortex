@@ -140,6 +140,30 @@ function clearSelection() {
 const canvas = document.getElementById('vortexCanvas');
 const ctx = canvas.getContext('2d');
 
+// Optional debug overlay for iPhone testing
+const urlParams = new URLSearchParams(window.location.search);
+const debugMode = urlParams.get('debug') === '1';
+let debugOverlay = null;
+
+if (debugMode) {
+    debugOverlay = document.createElement('div');
+    debugOverlay.style.cssText = `
+        position: fixed;
+        top: 60px;
+        left: 10px;
+        background: rgba(0,0,0,0.85);
+        color: #22d3ee;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 8px;
+        border-radius: 6px;
+        z-index: 1000;
+        pointer-events: none;
+        line-height: 1.4;
+    `;
+    document.body.appendChild(debugOverlay);
+}
+
 // Set canvas resolution with proper HiDPI handling
 function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -607,6 +631,18 @@ function drawVortex() {
     // Draw explode particles on top
     drawExplodeParticles();
     updateExplode();
+    
+    // Debug overlay update
+    if (debugMode && debugOverlay) {
+        const dpr = window.devicePixelRatio || 1;
+        debugOverlay.innerHTML = `
+            DPR: ${dpr.toFixed(2)}<br>
+            CSS: ${Math.round(w)}×${Math.round(h)}px<br>
+            Buffer: ${canvas.width}×${canvas.height}px<br>
+            Filaments: ${numFilaments}<br>
+            t=${vortexState.time.toFixed(2)} beat=${vortexState.beatIndex + 1}/4
+        `;
+    }
     
     // Keep animating during explode
     if (vortexState.isExploding) {
