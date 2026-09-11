@@ -140,6 +140,30 @@ function clearSelection() {
 const canvas = document.getElementById('vortexCanvas');
 const ctx = canvas.getContext('2d');
 
+// Optional debug overlay for iPhone testing
+const urlParams = new URLSearchParams(window.location.search);
+const debugMode = urlParams.get('debug') === '1';
+let debugOverlay = null;
+
+if (debugMode) {
+    debugOverlay = document.createElement('div');
+    debugOverlay.style.cssText = `
+        position: fixed;
+        top: 60px;
+        left: 10px;
+        background: rgba(0,0,0,0.85);
+        color: #22d3ee;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 8px;
+        border-radius: 6px;
+        z-index: 1000;
+        pointer-events: none;
+        line-height: 1.4;
+    `;
+    document.body.appendChild(debugOverlay);
+}
+
 // Set canvas resolution with proper HiDPI handling
 function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -304,16 +328,25 @@ function seededRandom(seed) {
 // Draw dense 3D filament vortex matching OpenAI Navier-Stokes visualization
 // Key features: inward spiral + axial stretching, depth-sorted thin tubes
 function drawVortex() {
-    // Ensure canvas transform is correct before drawing
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const cx = w / 2;
-    const cy = h / 2;
-    
-    ctx.clearRect(0, 0, w, h);
+    try {
+        // Ensure canvas transform is correct before drawing
+        const dpr = window.devicePixelRatio || 1;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        // Use stored canvas logical size to handle iOS layout race conditions
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        
+        // Guard: if canvas buffer is still zero-size, skip draw and retry
+        if (w < 1 || h < 1) {
+            requestAnimationFrame(drawVortex);
+            return;
+        }
+        
+        const cx = w / 2;
+        const cy = h / 2;
+        
+        ctx.clearRect(0, 0, w, h);
     
     // Dark background
     const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) / 2);
@@ -348,6 +381,9 @@ function drawVortex() {
     
     // Explode effect: burst outward
     const explodeFactor = vortexState.isExploding ? Math.sin(vortexState.explodeProgress * Math.PI) * 2.5 : 0;
+    
+    // Minimum base opacity: vortex ALWAYS visible even at t=0 (quiescent)
+    const baseOpacityBoost = 0.15;
     
     // Build filaments with 3D depth data
     const filaments = [];
@@ -486,9 +522,9 @@ function drawVortex() {
             filament.width *= 0.7;
         }
         
-        // Opacity variation for depth effect (deterministic)
+        // Opacity variation for depth effect (deterministic) + always-visible boost
         const opacityBase = 0.2 + seededRandom(seed + 7) * 0.2 + singularityFactor * 0.35;
-        filament.opacity = opacityBase + (vortexState.isExploding ? 0.25 : 0);
+        filament.opacity = opacityBase + baseOpacityBoost + (vortexState.isExploding ? 0.25 : 0);
         
         filaments.push(filament);
     }
@@ -556,7 +592,7 @@ function drawVortex() {
             b: 238
         };
         tendril.width = 0.4 + trand6 * 0.4;
-        tendril.opacity = 0.1 + seededRandom(tseed + 6) * 0.15 + singularityFactor * 0.2;
+        tendril.opacity = 0.1 + seededRandom(tseed + 6) * 0.15 + singularityFactor * 0.2 + baseOpacityBoost;
         
         filaments.push(tendril);
     }
@@ -577,94 +613,10 @@ function drawVortex() {
         
         ctx.strokeStyle = `rgba(${Math.round(fil.color.r)}, ${Math.round(fil.color.g)}, ${Math.round(fil.color.b)}, ${fil.opacity})`;
         ctx.lineWidth = fil.width;
-    // Draw multiple helical strands creating a tube bundle (spaghetti vortex)
-    // Draw from outside-in for proper depth ordering
-    const strandsData = [];
-    
-    for (let strandIdx = 0; strandIdx < numStrands; strandIdx++) {
-        // Each strand has unique phase and radial offset creating tube bundle effect
-        const phaseOffset = (strandIdx / numStrands) * Math.PI * 2;
-        const tubeRadiusFraction = 0.15 + (strandIdx % 5) * 0.04; // Varies tube thickness
-        
-        // Path points for this strand
-        const points = [];
-        
-        for (let i = 0; i <= 120; i++) {
-            const param = i / 120;
-            const spiralDepth = 1 - param; // 1=outer, 0=inner
-            
-            // Helical angle increases as we spiral inward
-            const helixAngle = param * Math.PI * 8 * helixTightness + phaseOffset;
-            
-            // Base radius shrinks toward center
-            const baseRadius = maxRadius * spiralDepth * (1 - singularityFactor * 0.5);
-            
-            // Add tube radius offset (perpendicular to spiral) creating bundle thickness
-            const tubeOffsetAngle = helixAngle + Math.PI / 2;
-            const tubeRadius = baseRadius * tubeRadiusFraction * (0.6 + spiralDepth * 0.4);
-            
-            // Rotation speed increases toward center
-            const rotationSpeed = 0.4 + (1 - spiralDepth) * 1.8;
-            const spinAngle = helixAngle * vortexState.spin + t * Math.PI * 2 * rotationSpeed;
-            
-            // 3D helical position: base spiral + tube bundle offset
-            const spiralX = Math.cos(spinAngle) * baseRadius;
-            const spiralY = Math.sin(spinAngle) * baseRadius / verticalStretch;
-            
-            const tubeOffsetX = Math.cos(tubeOffsetAngle) * tubeRadius;
-            const tubeOffsetY = Math.sin(tubeOffsetAngle) * tubeRadius / verticalStretch;
-            
-            let x = cx + spiralX + tubeOffsetX + explodeFactor * param * (spiralX + tubeOffsetX) * 0.5;
-            let y = cy + spiralY + tubeOffsetY + explodeFactor * param * (spiralY + tubeOffsetY) * 0.5;
-            
-            points.push({ x, y, depth: spiralDepth });
-        }
-        
-        // Color varies across strands: outer strands = cyan, inner = orange
-        const strandColorMix = strandIdx / numStrands;
-        let color;
-        
-        if (strandColorMix < 0.35) {
-            // Inner strands: pure orange/amber
-            color = { r: 251, g: 146, b: 60 };
-        } else if (strandColorMix < 0.75) {
-            // Middle transition zone
-            const mix = (strandColorMix - 0.35) / 0.4;
-            color = {
-                r: 251 - mix * (251 - 34),
-                g: 146 + mix * (211 - 146),
-                b: 60 + mix * (238 - 60)
-            };
-        } else {
-            // Outer strands: cyan/teal
-            color = { r: 34, g: 211, b: 238 };
-        }
-        
-        // Vary opacity and line width per strand for depth and volume
-        const depthOpacity = 0.25 + (strandIdx % 3) * 0.08;
-        const opacity = depthOpacity + singularityFactor * 0.35 + (vortexState.isExploding ? 0.25 : 0);
-        const lineWidth = 1.5 + (strandIdx % 4) * 0.4 + singularityFactor * 2.5 + (vortexState.isExploding ? 1.5 : 0);
-        
-        strandsData.push({ points, color, opacity, lineWidth });
-    }
-    
-    // Render all strands
-    strandsData.forEach(strand => {
-        ctx.beginPath();
-        strand.points.forEach((pt, idx) => {
-            if (idx === 0) {
-                ctx.moveTo(pt.x, pt.y);
-            } else {
-                ctx.lineTo(pt.x, pt.y);
-            }
-        });
-        
-        ctx.strokeStyle = `rgba(${Math.round(strand.color.r)}, ${Math.round(strand.color.g)}, ${Math.round(strand.color.b)}, ${strand.opacity})`;
-        ctx.lineWidth = strand.lineWidth;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke();
-    });
+    }
     
     // Central singularity glow
     if (singularityFactor > 0.3) {
@@ -680,9 +632,29 @@ function drawVortex() {
     drawExplodeParticles();
     updateExplode();
     
+    // Debug overlay update
+    if (debugMode && debugOverlay) {
+        const dpr = window.devicePixelRatio || 1;
+        debugOverlay.innerHTML = `
+            DPR: ${dpr.toFixed(2)}<br>
+            CSS: ${Math.round(w)}×${Math.round(h)}px<br>
+            Buffer: ${canvas.width}×${canvas.height}px<br>
+            Filaments: ${numFilaments}<br>
+            t=${vortexState.time.toFixed(2)} beat=${vortexState.beatIndex + 1}/4
+        `;
+    }
+    
     // Keep animating during explode
     if (vortexState.isExploding) {
         requestAnimationFrame(drawVortex);
+    }
+    } catch (error) {
+        // Fallback: show error on canvas instead of silent blank
+        console.error('Canvas draw error:', error);
+        ctx.fillStyle = '#fb923c';
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Canvas error: ' + error.message, canvas.width / (2 * dpr), canvas.height / (2 * dpr));
     }
 }
 
@@ -826,6 +798,12 @@ function updateScrubberPosition() {
     scrubberThumb.style.left = `${percent}%`;
     scrubberProgress.style.width = `${percent}%`;
     currentTimeDisplay.textContent = vortexState.time.toFixed(2);
+    
+    // Sync time slider too
+    if (sliders.time) {
+        sliders.time.value = vortexState.time;
+        valueDisplays.time.textContent = vortexState.time.toFixed(2);
+    }
 }
 
 function handleScrubberMove(clientX) {
@@ -919,6 +897,12 @@ document.addEventListener('mousemove', (e) => {
         updateMetrics();
         drawVortex();
         
+        // Sync spin slider
+        if (sliders.spin) {
+            sliders.spin.value = vortexState.spin;
+            valueDisplays.spin.textContent = vortexState.spin.toFixed(2);
+        }
+        
         lastCanvasX = e.clientX;
         lastCanvasY = e.clientY;
     }
@@ -937,6 +921,12 @@ document.addEventListener('touchmove', (e) => {
         updateBeatIndicator();
         updateMetrics();
         drawVortex();
+        
+        // Sync spin slider
+        if (sliders.spin) {
+            sliders.spin.value = vortexState.spin;
+            valueDisplays.spin.textContent = vortexState.spin.toFixed(2);
+        }
         
         lastCanvasX = e.touches[0].clientX;
         lastCanvasY = e.touches[0].clientY;
@@ -985,6 +975,21 @@ Object.keys(sliders).forEach(key => {
         updateMetrics();
         drawVortex();
     });
+    
+    // Sync on change event too (iOS Safari needs both)
+    sliders[key].addEventListener('change', (e) => {
+        const value = parseFloat(e.target.value);
+        vortexState[key] = value;
+        valueDisplays[key].textContent = value.toFixed(2);
+        
+        if (key === 'time') {
+            updateScrubberPosition();
+            updateBeatIndicator();
+        }
+        
+        updateMetrics();
+        drawVortex();
+    });
 });
 
 // ============================================================================
@@ -992,18 +997,27 @@ Object.keys(sliders).forEach(key => {
 // ============================================================================
 
 function init() {
-    // Ensure canvas is properly sized before first draw
-    resizeCanvas();
-    
-    updateScrubberPosition();
-    updateBeatIndicator();
-    updateMetrics();
-    drawVortex();
-    
-    // Sync sliders with initial state
-    Object.keys(sliders).forEach(key => {
-        sliders[key].value = vortexState[key];
-        valueDisplays[key].textContent = vortexState[key].toFixed(2);
+    // iOS Safari: wait for layout settle before first draw
+    // Double rAF ensures fonts/layout are ready
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            // Ensure canvas is properly sized before first draw
+            resizeCanvas();
+            
+            // Small delay to ensure buffer is ready
+            setTimeout(() => {
+                updateScrubberPosition();
+                updateBeatIndicator();
+                updateMetrics();
+                drawVortex();
+                
+                // Sync sliders with initial state
+                Object.keys(sliders).forEach(key => {
+                    sliders[key].value = vortexState[key];
+                    valueDisplays[key].textContent = vortexState[key].toFixed(2);
+                });
+            }, 50);
+        });
     });
 }
 

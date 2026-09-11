@@ -187,6 +187,9 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     -webkit-touch-callout: none;
+    /* iOS Safari: prevent layout fights */
+    position: relative;
+    contain: layout style paint;
 }
 
 #vortexCanvas:active {
